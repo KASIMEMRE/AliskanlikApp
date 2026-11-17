@@ -24,6 +24,10 @@
 }
 
 * { box-sizing: border-box; }
+
+/* hidden özniteliği aslında "display: none" demektir; ama CSS'te display: flex yazan bir kural
+   (ör. .sekmeler) onu EZER ve öğe görünmeye devam eder. Bu kural hidden'ı her zaman kazanır yapar. */
+[hidden] { display: none !important; }
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -209,6 +213,20 @@ body.gelistirici .api-etiket { display: inline-block; }
 /* Projeler: adımlar açılır kutuda */
 details.proje-adimlar { margin-top: 12px; }
 details.proje-adimlar summary { cursor: pointer; font-weight: 600; color: var(--vurgu); padding: 6px 0; }
+
+/* ---- Giriş / kayıt ---- */
+.kullanici-kutu { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.kullanici-kutu .dugme { margin-top: 0; }
+.giris-kart { max-width: 420px; margin: 40px auto; }
+.giris-sekmeler { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--cizgi); }
+.giris-sekmeler button { flex: 1; background: none; border: none; padding: 10px; font-size: 1rem; color: var(--soluk);
+  border-bottom: 3px solid transparent; margin-bottom: -1px; cursor: pointer; }
+.giris-sekmeler button.aktif { color: var(--vurgu); border-bottom-color: var(--vurgu); font-weight: 600; }
+#girisFormu label { display: block; margin: 12px 0; font-size: .9rem; color: var(--soluk); }
+#girisFormu input { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font-size: 1rem;
+  border: 1px solid var(--cizgi); border-radius: 8px; background: var(--kart); color: var(--yazi); }
+#girisFormu .dugme { width: 100%; }
+.kucuk-not { font-size: .8rem; margin-top: 16px; }
 
 /* ---- Terim kullanım örnekleri ---- */
 .terim-izgara { grid-template-columns: 1fr; }

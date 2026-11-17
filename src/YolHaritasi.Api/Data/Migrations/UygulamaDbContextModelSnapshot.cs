@@ -70,14 +70,29 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.Property<int>("Sira")
                         .HasColumnType("int");
 
-                    b.Property<bool>("Tamamlandi")
-                        .HasColumnType("bit");
-
                     b.HasKey("Id");
 
                     b.HasIndex("KonuId");
 
                     b.ToTable("Gorevler");
+                });
+
+            modelBuilder.Entity("YolHaritasi.Api.Entities.GorevIlerleme", b =>
+                {
+                    b.Property<int>("KullaniciId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GorevId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TamamlanmaTarihi")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KullaniciId", "GorevId");
+
+                    b.HasIndex("GorevId");
+
+                    b.ToTable("GorevIlerlemeleri");
                 });
 
             modelBuilder.Entity("YolHaritasi.Api.Entities.Kaynak", b =>
@@ -146,15 +161,69 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.Property<int>("TahminiDakika")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("TamamlanmaTarihi")
-                        .HasColumnType("datetime2");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AlanId", "Sira")
                         .IsUnique();
 
                     b.ToTable("Konular");
+                });
+
+            modelBuilder.Entity("YolHaritasi.Api.Entities.KonuIlerleme", b =>
+                {
+                    b.Property<int>("KullaniciId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("KonuId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TamamlanmaTarihi")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KullaniciId", "KonuId");
+
+                    b.HasIndex("KonuId");
+
+                    b.ToTable("KonuIlerlemeleri");
+                });
+
+            modelBuilder.Entity("YolHaritasi.Api.Entities.Kullanici", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Ad")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("KayitTarihi")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SifreHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Kullanicilar");
                 });
 
             modelBuilder.Entity("YolHaritasi.Api.Entities.Proje", b =>
@@ -193,6 +262,24 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.ToTable("Projeler");
                 });
 
+            modelBuilder.Entity("YolHaritasi.Api.Entities.ProjeAdimIlerleme", b =>
+                {
+                    b.Property<int>("KullaniciId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjeAdimiId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TamamlanmaTarihi")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KullaniciId", "ProjeAdimiId");
+
+                    b.HasIndex("ProjeAdimiId");
+
+                    b.ToTable("ProjeAdimIlerlemeleri");
+                });
+
             modelBuilder.Entity("YolHaritasi.Api.Entities.ProjeAdimi", b =>
                 {
                     b.Property<int>("Id")
@@ -215,9 +302,6 @@ namespace YolHaritasi.Api.Data.Migrations
 
                     b.Property<int>("Sira")
                         .HasColumnType("int");
-
-                    b.Property<bool>("Tamamlandi")
-                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -282,6 +366,25 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.Navigation("Konu");
                 });
 
+            modelBuilder.Entity("YolHaritasi.Api.Entities.GorevIlerleme", b =>
+                {
+                    b.HasOne("YolHaritasi.Api.Entities.Gorev", "Gorev")
+                        .WithMany("Ilerlemeler")
+                        .HasForeignKey("GorevId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YolHaritasi.Api.Entities.Kullanici", "Kullanici")
+                        .WithMany()
+                        .HasForeignKey("KullaniciId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Gorev");
+
+                    b.Navigation("Kullanici");
+                });
+
             modelBuilder.Entity("YolHaritasi.Api.Entities.Kaynak", b =>
                 {
                     b.HasOne("YolHaritasi.Api.Entities.Konu", "Konu")
@@ -304,6 +407,25 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.Navigation("Alan");
                 });
 
+            modelBuilder.Entity("YolHaritasi.Api.Entities.KonuIlerleme", b =>
+                {
+                    b.HasOne("YolHaritasi.Api.Entities.Konu", "Konu")
+                        .WithMany("Ilerlemeler")
+                        .HasForeignKey("KonuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YolHaritasi.Api.Entities.Kullanici", "Kullanici")
+                        .WithMany("KonuIlerlemeleri")
+                        .HasForeignKey("KullaniciId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Konu");
+
+                    b.Navigation("Kullanici");
+                });
+
             modelBuilder.Entity("YolHaritasi.Api.Entities.Proje", b =>
                 {
                     b.HasOne("YolHaritasi.Api.Entities.Alan", "Alan")
@@ -313,6 +435,25 @@ namespace YolHaritasi.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Alan");
+                });
+
+            modelBuilder.Entity("YolHaritasi.Api.Entities.ProjeAdimIlerleme", b =>
+                {
+                    b.HasOne("YolHaritasi.Api.Entities.Kullanici", "Kullanici")
+                        .WithMany()
+                        .HasForeignKey("KullaniciId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YolHaritasi.Api.Entities.ProjeAdimi", "ProjeAdimi")
+                        .WithMany("Ilerlemeler")
+                        .HasForeignKey("ProjeAdimiId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Kullanici");
+
+                    b.Navigation("ProjeAdimi");
                 });
 
             modelBuilder.Entity("YolHaritasi.Api.Entities.ProjeAdimi", b =>
@@ -344,18 +485,35 @@ namespace YolHaritasi.Api.Data.Migrations
                     b.Navigation("Projeler");
                 });
 
+            modelBuilder.Entity("YolHaritasi.Api.Entities.Gorev", b =>
+                {
+                    b.Navigation("Ilerlemeler");
+                });
+
             modelBuilder.Entity("YolHaritasi.Api.Entities.Konu", b =>
                 {
                     b.Navigation("Gorevler");
+
+                    b.Navigation("Ilerlemeler");
 
                     b.Navigation("Kaynaklar");
 
                     b.Navigation("Terimler");
                 });
 
+            modelBuilder.Entity("YolHaritasi.Api.Entities.Kullanici", b =>
+                {
+                    b.Navigation("KonuIlerlemeleri");
+                });
+
             modelBuilder.Entity("YolHaritasi.Api.Entities.Proje", b =>
                 {
                     b.Navigation("Adimlar");
+                });
+
+            modelBuilder.Entity("YolHaritasi.Api.Entities.ProjeAdimi", b =>
+                {
+                    b.Navigation("Ilerlemeler");
                 });
 #pragma warning restore 612, 618
         }

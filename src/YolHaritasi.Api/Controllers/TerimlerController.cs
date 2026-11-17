@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using YolHaritasi.Api.Data;
@@ -8,7 +9,8 @@ namespace YolHaritasi.Api.Controllers;
 /// <summary>Terim sözlüğü.</summary>
 [ApiController]
 [Route("api/[controller]")]
-[Tags("Terim Sözlüğü")]   // API arayüzünde (Scalar) bu grubun başlığı
+[Tags("Terim Sözlüğü")]
+[AllowAnonymous]   // Sözlük herkese açık; giriş yapmadan da aranabilir   // API arayüzünde (Scalar) bu grubun başlığı
 public class TerimlerController(UygulamaDbContext db) : ControllerBase
 {
     /// <summary>Terim sözlüğünde arama. Kelime verilmezse tüm terimler alfabetik gelir.</summary>

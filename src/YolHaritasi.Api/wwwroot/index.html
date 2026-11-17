@@ -19,14 +19,38 @@
       <h1>🗺️ Yol Haritası</h1>
       <p class="alt-baslik">C# · Backend · SQL · Sunucu · Yapay Zeka</p>
     </div>
-    <div class="genel-ilerleme">
+    <div class="kullanici-kutu" id="kullaniciKutu" hidden>
+      <span id="kullaniciAdi"></span>
+      <button class="dugme ikincil kucuk" id="cikisDugme">Çıkış</button>
+    </div>
+    <div class="genel-ilerleme" id="genelIlerlemeKutu" hidden>
       <span id="genelYuzde">%0</span>
       <div class="cubuk"><div id="genelCubuk" class="dolgu"></div></div>
       <small>tüm yol haritası</small>
     </div>
   </header>
 
-  <nav class="sekmeler">
+  <!-- GİRİŞ / KAYIT: Oturum yoksa sadece bu görünür -->
+  <main id="girisEkrani" hidden>
+    <div class="kart giris-kart">
+      <div class="giris-sekmeler">
+        <button class="aktif" data-giris-mod="giris">Giriş yap</button>
+        <button data-giris-mod="kayit">Kayıt ol</button>
+      </div>
+      <p class="meta" id="girisAciklama">Hesabınla giriş yap. İlerlemen hesabına kaydedilir.</p>
+      <form id="girisFormu" novalidate>
+        <label id="adSatiri" hidden>Ad<input name="ad" autocomplete="name"></label>
+        <label>E-posta<input name="email" type="email" autocomplete="email" required></label>
+        <label>Şifre<input name="sifre" type="password" autocomplete="current-password" required></label>
+        <div class="hata" id="girisHata" hidden></div>
+        <button class="dugme" type="submit" id="girisGonder">Giriş yap</button>
+      </form>
+      <p class="meta kucuk-not">İlk kayıt olan kullanıcı <strong>Admin</strong> olur ve önceki ilerleme ona aktarılır.</p>
+      <div class="api-etiket">POST /api/hesap/giris · POST /api/hesap/kayit</div>
+    </div>
+  </main>
+
+  <nav class="sekmeler" id="anaMenu" hidden>
     <button class="sekme aktif" data-sekme="bugun">📅 Bugün</button>
     <button class="sekme" data-sekme="alanlar">🗺️ Tüm Konular</button>
     <button class="sekme" data-sekme="projeler">🧪 Projeler</button>
@@ -34,7 +58,7 @@
     <button class="sekme" data-sekme="veritabani">🗄️ Veritabanı</button>
   </nav>
 
-  <main>
+  <main id="anaIcerik" hidden>
     <!-- BUGÜN -->
     <section id="bugun" class="panel aktif">
       <div id="hosgeldin" class="bilgi-kutusu" hidden>

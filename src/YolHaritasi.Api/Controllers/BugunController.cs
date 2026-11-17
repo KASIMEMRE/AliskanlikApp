@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Auth;
 using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Services;
 
@@ -13,5 +14,5 @@ public class BugunController(IIlerlemeServisi ilerleme) : ControllerBase
     /// <summary>Sıradaki konu, terimleri, görevleri ve genel ilerleme yüzdesi.</summary>
     // GET /api/bugun
     [HttpGet]
-    public Task<BugunDto> Getir() => ilerleme.BugunAsync();
+    public Task<BugunDto> Getir() => ilerleme.BugunAsync(User.KullaniciId());   // User.KullaniciId(): token'daki kullanıcı
 }

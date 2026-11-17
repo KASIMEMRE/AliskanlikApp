@@ -13,6 +13,7 @@ Bu repo iki şeydir:
   - [Adım 1: Proje yapısı, SQL Server ve ilk API](docs/adim-01.md)
   - [Adım 2: Ders notları, kaynaklar, projeler ve veritabanı ekranı](docs/adim-02.md)
   - [Adım 3: Sözlüğe gerçek kullanım örnekleri](docs/adim-03.md)
+  - [Adım 4: Kullanıcı kaydı, giriş (JWT) ve kişisel ilerleme](docs/adim-04.md)
 - Kodda ne değiştiğini görmek için GitHub'da **Commits** sekmesine bak. Her commit bir adımdır.
 - Kod dosyalarındaki yorumlar da anlatımın parçası.
 
@@ -36,7 +37,7 @@ Bu repo iki şeydir:
 | ✅ 1 | Proje, SQL Server, tablolar, yol haritası verisi, okuma/tamamlama API'leri | Web API, Controller, DI, EF Core, Migration, DTO |
 | ✅ 2 | C# Temelleri, ders notları, kaynaklar, projeler, veritabanı ekranı, SQL pratik alanı | İkinci migration, ADO.NET, ExecuteUpdate, güvenlik katmanları |
 | ✅ 2b | Sözlükte her terime gerçek kullanım örneği (145 terim) | Üçüncü migration, raw string, pattern matching |
-| 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many, veri taşıma |
+| ✅ 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many, veri taşıma |
 | 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
 | 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
 | 5 | IIS'e yayın | Publish, App Pool, binding, HTTPS, web.config |
@@ -76,17 +77,19 @@ AliskanlikApp/                      ← reponun ana klasörü (git pull burada)
 ├── docs/                           ← 📚 her geliştirme adımının anlatımı
 │   ├── adim-01.md
 │   ├── adim-02.md
-│   └── adim-03.md
+│   ├── adim-03.md
+│   └── adim-04.md
 └── src/YolHaritasi.Api/            ← uygulama (dotnet run burada)
     ├── Program.cs                  ← başlangıç: servisler + istek boru hattı
     ├── appsettings.Development.json← veritabanı bağlantısı (connection string)
-    ├── Entities/                   ← tablo sınıfları (Alan, Konu, Terim, Gorev, Kaynak, Proje)
+    ├── Auth/                       ← JWT ayarları ve token üretimi
+    ├── Entities/                   ← tablo sınıfları (Alan, Konu, Terim, Gorev, Kaynak, Proje, Kullanici, Ilerleme)
     ├── Data/
     │   ├── UygulamaDbContext.cs    ← C# ↔ SQL Server köprüsü
     │   ├── BaslangicVerisi*.cs     ← yol haritası içeriği (konular, ders notları, kaynaklar, projeler)
     │   └── Migrations/             ← veritabanı şema geçişleri
     ├── Dtos/                       ← API'nin dışarı verdiği veri şekilleri
-    ├── Services/                   ← iş kuralları (IlerlemeServisi, VeritabaniServisi)
+    ├── Services/                   ← iş kuralları (IlerlemeServisi, HesapServisi, VeritabaniServisi)
     ├── Controllers/                ← API adresleri (/api/...)
     ├── wwwroot/                    ← tarayıcıda açılan ekran (HTML, CSS, JavaScript)
     └── YolHaritasi.Api.http        ← API'yi Visual Studio'dan denemek için hazır istekler

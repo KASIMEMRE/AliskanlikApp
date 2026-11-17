@@ -116,7 +116,7 @@ Console.WriteLine($"10 yıl sonra {yas + 10} yaşında olacaksın.");
 ```
 
 ## Nullable (soru işaretli) tipler
-`string?` "bu değişken null olabilir" demektir. Projemizde `Konu.TamamlanmaTarihi` bir `DateTime?`: konu tamamlanmadıysa değeri yok (veritabanında NULL).
+`string?` "bu değişken null olabilir" demektir. Projemizde `Terim.Ornek` bir `string?`: kısa örneği olmayan terimlerde değeri yok (veritabanında NULL).
 """,
 
         [("C# Temelleri", 3)] = """
@@ -602,7 +602,7 @@ var uzunlar = konular
 Projemizde LINQ veritabanı üzerinde yazılıyor ve **EF Core onu SQL'e çeviriyor**:
 ```csharp
 await db.Konular
-    .Where(k => k.TamamlanmaTarihi == null)
+    .Where(k => !k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId))
     .OrderBy(k => k.Alan.Sira).ThenBy(k => k.Sira)
     .Select(k => k.Id)
     .FirstOrDefaultAsync();
@@ -611,7 +611,8 @@ Bu sorgu SQL Server'a şöyle gider:
 ```
 SELECT TOP(1) k.Id FROM Konular k
 INNER JOIN Alanlar a ON k.AlanId = a.Id
-WHERE k.TamamlanmaTarihi IS NULL
+WHERE NOT EXISTS (SELECT 1 FROM KonuIlerlemeleri i
+                  WHERE i.KonuId = k.Id AND i.KullaniciId = @kullaniciId)
 ORDER BY a.Sira, k.Sira
 ```
 Uygulamayı çalıştırdığında terminalde bu SQL'leri görebilirsin.
@@ -862,7 +863,13 @@ public async Task<IActionResult> Sil(int id) { ... }
 ```
 
 ## Bu projede
-Şu an tek kullanıcı var. İlerideki bir adımda kullanıcı kaydı ve girişi ekleyip her kullanıcının kendi ilerlemesini tutacağız. O zaman `Konular.TamamlanmaTarihi` sütunu `KullaniciIlerleme` adlı ayrı bir tabloya taşınacak (çoka çok ilişki).
+Bu uygulamada artık kayıt ve giriş var:
+- `Controllers/HesapController.cs`: `POST /api/hesap/kayit`, `POST /api/hesap/giris`, `GET /api/hesap/ben`
+- `Services/HesapServisi.cs`: Şifre hash'leme (`PasswordHasher`) ve giriş kontrolü
+- `Auth/TokenServisi.cs`: JWT üretimi
+- `Program.cs`: `AddAuthentication().AddJwtBearer(...)` ve **fallback policy**. Üzerinde `[AllowAnonymous]` olmayan her endpoint giriş ister.
+
+Her kullanıcının ilerlemesi `KonuIlerlemeleri`, `GorevIlerlemeleri` ve `ProjeAdimIlerlemeleri` tablolarında (çoka çok ilişki) tutuluyor. F12 → Network'te herhangi bir isteğin **Request Headers** kısmında `Authorization: Bearer eyJ...` başlığını görebilirsin.
 """,
 
         [("Backend", 6)] = """

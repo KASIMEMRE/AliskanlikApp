@@ -29,8 +29,9 @@ public class ProjeAdimi
 
     // İpucu zorunlu değil → nullable (NULL olabilir)
     public string? Ipucu { get; set; }
-    public bool Tamamlandi { get; set; }
 
     public int ProjeId { get; set; }
     public Proje Proje { get; set; } = null!;
+
+    public List<ProjeAdimIlerleme> Ilerlemeler { get; set; } = [];
 }

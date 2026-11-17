@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Auth;
 using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Services;
 
@@ -18,7 +19,7 @@ public class KonularController(IIlerlemeServisi ilerleme) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<KonuDetayDto>> Getir(int id)
     {
-        var konu = await ilerleme.KonuDetayAsync(id);
+        var konu = await ilerleme.KonuDetayAsync(User.KullaniciId(), id);
         return konu is null ? NotFound(new HataDto($"{id} numaralı konu bulunamadı.")) : konu;
     }
 
@@ -29,7 +30,7 @@ public class KonularController(IIlerlemeServisi ilerleme) : ControllerBase
     [HttpPost("{id:int}/tamamla")]
     public async Task<IActionResult> Tamamla(int id)
     {
-        var bulundu = await ilerleme.KonuyuTamamlaAsync(id);
+        var bulundu = await ilerleme.KonuyuTamamlaAsync(User.KullaniciId(), id);
 
         // 204 No Content: "İşlem başarılı, sana gönderecek bir gövdem yok."
         return bulundu ? NoContent() : NotFound(new HataDto($"{id} numaralı konu bulunamadı."));

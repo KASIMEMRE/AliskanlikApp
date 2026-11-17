@@ -102,3 +102,35 @@ public record SorguSonucuDto(
     int SatirSayisi,
     bool Kesildi,
     long SureMs);
+
+// ---- Hesap (Adım 4) ----
+// DATA ANNOTATIONS ile DOĞRULAMA (validation): [ApiController] olan controller'larda,
+// kurallara uymayan istek metoda HİÇ ULAŞMADAN otomatik 400 Bad Request ile reddedilir.
+// ErrorMessage: Kullanıcıya gösterilecek Türkçe hata mesajı.
+// Record'larda attribute'lar CONSTRUCTOR PARAMETRESİNE yazılır. ("[property: ...]" yazarsan ASP.NET Core
+// doğrulamayı yok sayılacak diye hata verir; bunu bizzat yaşadık, docs/adim-04.md'ye bak.)
+
+public record KayitIstegi(
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Ad zorunludur.")]
+    [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 2, ErrorMessage = "Ad 2-100 karakter olmalıdır.")]
+    string Ad,
+
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-posta zorunludur.")]
+    [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
+    string Email,
+
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Şifre zorunludur.")]
+    [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 8, ErrorMessage = "Şifre en az 8 karakter olmalıdır.")]
+    string Sifre);
+
+public record GirisIstegi(
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "E-posta zorunludur.")]
+    string Email,
+
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Şifre zorunludur.")]
+    string Sifre);
+
+public record KullaniciDto(int Id, string Ad, string Email, string Rol);
+
+/// <summary>Giriş/kayıt cevabı: token + ne zaman geçersiz olacağı + kullanıcı bilgisi.</summary>
+public record OturumDto(string Token, DateTime BitisTarihi, KullaniciDto Kullanici);

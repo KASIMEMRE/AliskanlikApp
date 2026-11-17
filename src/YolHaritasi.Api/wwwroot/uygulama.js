@@ -4,17 +4,40 @@
 //  İstekleri tarayıcıda F12 → Network sekmesinde canlı olarak görebilirsin.
 // ============================================================================
 
+// --- Oturum (giriş yapan kullanıcı ve token) ---------------------------------
+// Token tarayıcının localStorage'ında saklanıyor; sayfa yenilense de giriş kalıcı olur.
+// ⚠️ localStorage'daki veriyi sayfadaki her JavaScript okuyabilir. Bu yüzden XSS'e karşı
+//    guvenli() ile kaçırma çok önemli. Daha güvenli alternatif: HttpOnly cookie (docs/adim-04.md).
+function oturumOku() { try { return JSON.parse(localStorage.getItem("oturum")); } catch { return null; } }
+function oturumYaz(o) { try { localStorage.setItem("oturum", JSON.stringify(o)); } catch { } }
+function oturumSil() { try { localStorage.removeItem("oturum"); } catch { } }
+
 // --- API ile konuşan yardımcı fonksiyon ------------------------------------
 // fetch: Tarayıcının HTTP istemcisi. "await" cevabı beklemek demek.
 async function api(adres, secenekler = {}) {
+  const oturum = oturumOku();
   const cevap = await fetch(adres, {
-    headers: { "Content-Type": "application/json" },
     ...secenekler,
+    headers: {
+      "Content-Type": "application/json",
+      // Her isteğe token'ı ekle: "Authorization: Bearer eyJ..."  (F12 → Network → Request Headers)
+      ...(oturum ? { Authorization: `Bearer ${oturum.token}` } : {}),
+    },
   });
+
+  // 401: Token yok, süresi dolmuş veya geçersiz → giriş ekranına dön
+  if (cevap.status === 401 && !adres.startsWith("/api/hesap/")) {
+    oturumSil();
+    girisEkraniniGoster("Oturumun sona erdi, lütfen tekrar giriş yap.");
+    throw new Error("Giriş gerekli");
+  }
+
   if (!cevap.ok) {
-    // 404, 500 gibi bir durum kodu geldi
+    // 400, 403, 404, 409, 500 gibi bir durum kodu geldi
     const hata = await cevap.json().catch(() => ({}));
-    throw new Error(hata.mesaj ?? `Sunucu hatası: ${cevap.status}`);
+    // Doğrulama hataları (ProblemDetails) "errors" alanında gelir: { "Sifre": ["Şifre en az 8 karakter..."] }
+    const dogrulama = hata.errors ? Object.values(hata.errors).flat().join(" ") : null;
+    throw new Error(hata.mesaj ?? dogrulama ?? (cevap.status === 403 ? "Bu işlem için yetkin yok." : `Sunucu hatası: ${cevap.status}`));
   }
   // 204 No Content cevabının gövdesi yoktur
   return cevap.status === 204 ? null : cevap.json();
@@ -478,11 +501,11 @@ async function veritabaniniYukle() {
 const ORNEK_SORGULAR = {
   "Tüm alanlar": "SELECT * FROM Alanlar ORDER BY Sira",
   "Alan başına konu": "SELECT a.Ad, COUNT(*) AS KonuSayisi\nFROM Alanlar a\nJOIN Konular k ON k.AlanId = a.Id\nGROUP BY a.Ad",
-  "Tamamlanan konular": "SELECT a.Ad AS Alan, k.Baslik, k.TamamlanmaTarihi\nFROM Konular k\nJOIN Alanlar a ON a.Id = k.AlanId\nWHERE k.TamamlanmaTarihi IS NOT NULL\nORDER BY k.TamamlanmaTarihi",
+  "Tamamlanan konular": "SELECT u.Ad AS Kullanici, a.Ad AS Alan, k.Baslik, i.TamamlanmaTarihi\nFROM KonuIlerlemeleri i\nJOIN Kullanicilar u ON u.Id = i.KullaniciId\nJOIN Konular k ON k.Id = i.KonuId\nJOIN Alanlar a ON a.Id = k.AlanId\nORDER BY i.TamamlanmaTarihi",
   "Terim ara (LIKE)": "SELECT t.Ad, t.Tanim, k.Baslik AS Konu\nFROM Terimler t\nJOIN Konular k ON k.Id = t.KonuId\nWHERE t.Ad LIKE '%Key%'",
   "Kaynağı olmayan konular": "SELECT k.Id, k.Baslik\nFROM Konular k\nLEFT JOIN Kaynaklar x ON x.KonuId = k.Id\nWHERE x.Id IS NULL",
   "En uzun konular (TOP)": "SELECT TOP 5 Baslik, TahminiDakika\nFROM Konular\nORDER BY TahminiDakika DESC",
-  "Proje ilerlemesi": "SELECT p.Baslik,\n       COUNT(*) AS AdimSayisi,\n       SUM(CASE WHEN a.Tamamlandi = 1 THEN 1 ELSE 0 END) AS Tamamlanan\nFROM Projeler p\nJOIN ProjeAdimlari a ON a.ProjeId = p.Id\nGROUP BY p.Baslik",
+  "Proje ilerlemesi": "SELECT p.Baslik,\n       COUNT(*) AS AdimSayisi,\n       COUNT(i.ProjeAdimiId) AS Tamamlanan\nFROM Projeler p\nJOIN ProjeAdimlari a ON a.ProjeId = p.Id\nLEFT JOIN ProjeAdimIlerlemeleri i ON i.ProjeAdimiId = a.Id\nGROUP BY p.Baslik",
 };
 
 const ornekKutu = document.getElementById("ornekSorgular");
@@ -534,5 +557,70 @@ gelistiriciKutu.addEventListener("change", () => {
   ayarYaz("gelistiriciModu", gelistiriciKutu.checked ? "1" : "0");
 });
 
+// --- Giriş / Kayıt ekranı ------------------------------------------------------
+let girisModu = "giris";
+
+function girisEkraniniGoster(mesaj) {
+  document.getElementById("girisEkrani").hidden = false;
+  for (const id of ["anaMenu", "anaIcerik", "kullaniciKutu", "genelIlerlemeKutu"])
+    document.getElementById(id).hidden = true;
+  const hata = document.getElementById("girisHata");
+  hata.hidden = !mesaj;
+  hata.textContent = mesaj ?? "";
+}
+
+function uygulamayiGoster(kullanici) {
+  document.getElementById("girisEkrani").hidden = true;
+  for (const id of ["anaMenu", "anaIcerik", "kullaniciKutu", "genelIlerlemeKutu"])
+    document.getElementById(id).hidden = false;
+  document.getElementById("kullaniciAdi").textContent =
+    `👤 ${kullanici.ad}${kullanici.rol === "Admin" ? " (Admin)" : ""}`;
+  bugunuYukle();
+}
+
+document.querySelectorAll("[data-giris-mod]").forEach((b) =>
+  b.addEventListener("click", () => {
+    girisModu = b.dataset.girisMod;
+    document.querySelectorAll("[data-giris-mod]").forEach((x) => x.classList.toggle("aktif", x === b));
+    const kayit = girisModu === "kayit";
+    document.getElementById("adSatiri").hidden = !kayit;
+    document.getElementById("girisGonder").textContent = kayit ? "Kayıt ol" : "Giriş yap";
+    document.getElementById("girisAciklama").textContent = kayit
+      ? "Yeni bir hesap oluştur. Şifre en az 8 karakter olmalı."
+      : "Hesabınla giriş yap. İlerlemen hesabına kaydedilir.";
+    document.getElementById("girisHata").hidden = true;
+  }));
+
+document.getElementById("girisFormu").addEventListener("submit", async (e) => {
+  e.preventDefault();   // formun sayfayı yenilemesini engelle; isteği kendimiz gönderiyoruz
+  const veri = Object.fromEntries(new FormData(e.target));
+  const govde = girisModu === "kayit"
+    ? { ad: veri.ad, email: veri.email, sifre: veri.sifre }
+    : { email: veri.email, sifre: veri.sifre };
+  try {
+    const oturum = await api(`/api/hesap/${girisModu}`, { method: "POST", body: JSON.stringify(govde) });
+    oturumYaz(oturum);
+    uygulamayiGoster(oturum.kullanici);
+  } catch (hata) {
+    girisEkraniniGoster(hata.message);
+  }
+});
+
+document.getElementById("cikisDugme").addEventListener("click", () => {
+  oturumSil();
+  girisEkraniniGoster();
+});
+
+// --- Başlangıç: oturum var mı kontrol et --------------------------------------
+async function basla() {
+  if (!oturumOku()) return girisEkraniniGoster();
+  try {
+    const ben = await api("/api/hesap/ben");   // token hâlâ geçerli mi? (değilse 401 → giriş ekranı)
+    uygulamayiGoster(ben);
+  } catch {
+    girisEkraniniGoster();
+  }
+}
+
 // --- Başlangıç: sayfa açılınca bugünü yükle ---------------------------------
-bugunuYukle();
+basla();

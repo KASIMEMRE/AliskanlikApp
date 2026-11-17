@@ -20,9 +20,7 @@ public class Konu
     // Tahmini çalışma süresi (dakika)
     public int TahminiDakika { get; set; }
 
-    // İlerleme bilgisi. Şimdilik tek kullanıcı var; kullanıcı sistemi gelince ayrı tabloya taşınacak.
-    // "DateTime?" sonundaki ? = NULLABLE: değer olmayabilir. Tamamlanmadıysa veritabanında NULL durur.
-    public DateTime? TamamlanmaTarihi { get; set; }
+    // Not: "Tamamlandı" bilgisi Adım 4'te buradan KonuIlerlemeleri tablosuna taşındı (kullanıcı başına ilerleme).
 
     // FOREIGN KEY (yabancı anahtar): Bu konunun hangi Alan'a ait olduğunu tutan sütun.
     // Alanlar tablosundaki Id'ye işaret eder. Olmayan bir AlanId yazmaya çalışırsan SQL Server hata verir;
@@ -34,4 +32,5 @@ public class Konu
     public List<Terim> Terimler { get; set; } = [];
     public List<Gorev> Gorevler { get; set; } = [];
     public List<Kaynak> Kaynaklar { get; set; } = [];
+    public List<KonuIlerleme> Ilerlemeler { get; set; } = [];
 }

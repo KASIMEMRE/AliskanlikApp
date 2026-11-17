@@ -71,7 +71,7 @@ public static partial class BaslangicVerisi
         ["Variable"] = T("Her metodun içinde, bir isteğin parametrelerini, veritabanından gelen sonucu, hesaplanan değerleri değişkenlerde tutarsın.", "csharp", """
             // IlerlemeServisi.cs — gerçek kod
             var toplam = await db.Konular.CountAsync();
-            var tamamlanan = await db.Konular.CountAsync(k => k.TamamlanmaTarihi != null);
+            var tamamlanan = await db.KonuIlerlemeleri.CountAsync(i => i.KullaniciId == kullaniciId);
             var yuzde = toplam == 0 ? 0 : tamamlanan * 100 / toplam;
             """),
 
@@ -81,8 +81,8 @@ public static partial class BaslangicVerisi
             int               →  int                   Konu.Id, Konu.Sira
             string            →  nvarchar(n) / (max)   Konu.Baslik → nvarchar(200)
             string?           →  nvarchar NULL         Terim.Ornek
-            bool              →  bit                   Gorev.Tamamlandi
-            DateTime?         →  datetime2 NULL        Konu.TamamlanmaTarihi
+            bool              →  bit                   (ör. Kullanici.AktifMi)
+            DateTime          →  datetime2             KonuIlerleme.TamamlanmaTarihi
             decimal           →  decimal(18,2)         (para: Urun.Fiyat)
             Guid              →  uniqueidentifier      (dağıtık sistemlerde Id)
             """),
@@ -181,10 +181,10 @@ public static partial class BaslangicVerisi
                 if (konu is null)
                     return NotFound();
 
-                if (konu.TamamlanmaTarihi is not null)
+                if (await db.KonuIlerlemeleri.AnyAsync(i => i.KullaniciId == kullaniciId && i.KonuId == id))
                     return NoContent();          // zaten tamamlanmış
 
-                konu.TamamlanmaTarihi = DateTime.UtcNow;
+                db.KonuIlerlemeleri.Add(new KonuIlerleme { KullaniciId = kullaniciId, KonuId = id });
                 await db.SaveChangesAsync();
                 return NoContent();
             }
@@ -254,7 +254,7 @@ public static partial class BaslangicVerisi
             List<Konu> konular = await db.Konular.Where(k => k.AlanId == 1).ToListAsync();
 
             konular.Add(yeniKonu);
-            konular.RemoveAll(k => k.TamamlanmaTarihi != null);
+            konular.RemoveAll(k => k.TahminiDakika > 90);
             Console.WriteLine($"{konular.Count} konu kaldı");
             """),
 
@@ -345,7 +345,7 @@ public static partial class BaslangicVerisi
             public Task<BugunDto> Getir() => ilerleme.BugunAsync();
 
             // Hesaplanan property
-            public bool TamamlandiMi => TamamlanmaTarihi is not null;
+            public bool NotuVarMi => DersNotu is not null;
             public string TamAd => $"{Ad} {Soyad}";
             """),
 
@@ -364,7 +364,6 @@ public static partial class BaslangicVerisi
                 public int Id { get; set; }
                 public string Aciklama { get; set; } = "";
                 public int Sira { get; set; }
-                public bool Tamamlandi { get; set; }
 
                 public int KonuId { get; set; }
                 public Konu Konu { get; set; } = null!;
@@ -399,8 +398,8 @@ public static partial class BaslangicVerisi
             {
                 public int Id { get; set; }                           // otomatik property
                 public string Baslik { get; set; } = "";              // varsayılan değerli
-                public DateTime? TamamlanmaTarihi { get; set; }       // nullable
-                public bool TamamlandiMi => TamamlanmaTarihi != null;  // hesaplanan (sütun olmaz*)
+                public string? DersNotu { get; set; }                 // nullable
+                public bool NotuVarMi => DersNotu != null;            // hesaplanan (sütun olmaz*)
                 public decimal Bakiye { get; private set; }           // dışarıdan sadece okunur
             }
             // * EF Core'a [NotMapped] ile veya get-only olduğu için sütun yapmamasını söyleriz
@@ -580,7 +579,7 @@ public static partial class BaslangicVerisi
                 {
                     a.Id, a.Ad,
                     Toplam = a.Konular.Count,
-                    Tamamlanan = a.Konular.Count(k => k.TamamlanmaTarihi != null),
+                    Tamamlanan = a.Konular.Count(k => k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId)),
                 })
                 .ToListAsync();
             // → SELECT a.Id, a.Ad, (SELECT COUNT(*) ...), (SELECT COUNT(*) ... WHERE ...) FROM Alanlar a ORDER BY a.Sira
@@ -588,7 +587,7 @@ public static partial class BaslangicVerisi
 
         ["Lambda Expression"] = T("LINQ sorgularında, Minimal API endpoint'lerinde, olay (event) işleyicilerinde ve ayar kodlarında her yerde.", "csharp", """
             // LINQ koşulu
-            db.Konular.Where(k => k.TamamlanmaTarihi == null)
+            db.Konular.Where(k => k.TahminiDakika > 60)
 
             // Program.cs — DbContext ayarı
             builder.Services.AddDbContext<UygulamaDbContext>(options =>
@@ -828,9 +827,9 @@ public static partial class BaslangicVerisi
             """),
 
         ["Service Layer"] = T("İş kurallarını HTTP'den bağımsız tutar; aynı kural API'den, arka plan servisinden veya testlerden çağrılabilir.", "csharp", """
-            // IlerlemeServisi.cs — gerçek iş kuralı: "Bugünün konusu sıradaki ilk tamamlanmamış konudur"
+            // IlerlemeServisi.cs — gerçek iş kuralı: "Bugünün konusu, kullanıcının tamamlamadığı ilk konudur"
             var siradakiId = await db.Konular
-                .Where(k => k.TamamlanmaTarihi == null)
+                .Where(k => !k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId))
                 .OrderBy(k => k.Alan.Sira).ThenBy(k => k.Sira)
                 .Select(k => (int?)k.Id)
                 .FirstOrDefaultAsync();
@@ -850,7 +849,7 @@ public static partial class BaslangicVerisi
                 public string? DersNotu ...              bool Tamamlandi);   // hesaplanmış alan
                 ...
             }
-            // Dönüşüm: .Select(k => new KonuOzetDto(k.Id, k.Sira, ..., k.TamamlanmaTarihi != null))
+            // Dönüşüm: .Select(k => new KonuOzetDto(k.Id, k.Sira, ..., k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId)))
             """),
 
         ["Separation of Concerns"] = T("Kodun büyüdükçe yönetilebilir kalması için. Bir değişiklik tek bir yeri etkilemeli: tablo değişince controller, tasarım değişince servis değişmemeli.", "text", """
@@ -866,15 +865,18 @@ public static partial class BaslangicVerisi
             """),
 
         ["Authentication"] = T("Kullanıcıya özel veri sunan her uygulamada gerekir: giriş, kayıt, şifre sıfırlama, oturum yönetimi.", "csharp", """
-            // Giriş endpoint'i (Adım 3'te ekleyeceğiz — taslak)
-            [HttpPost("giris")]
-            public async Task<IActionResult> Giris(GirisIstegi istek)
+            // Services/HesapServisi.cs — gerçek kod
+            public async Task<OturumDto> GirisAsync(GirisIstegi istek)
             {
-                var kullanici = await db.Kullanicilar.SingleOrDefaultAsync(k => k.Email == istek.Email);
-                if (kullanici is null || !sifreServisi.Dogrula(istek.Sifre, kullanici.SifreHash))
-                    return Unauthorized(new HataDto("E-posta veya şifre hatalı."));
+                var email = istek.Email.Trim().ToLowerInvariant();
+                var kullanici = await db.Kullanicilar.SingleOrDefaultAsync(k => k.Email == email);
 
-                return Ok(new { token = tokenServisi.Uret(kullanici) });
+                // "E-posta yok" ve "şifre yanlış" için AYNI mesaj (hangi e-postaların kayıtlı olduğu sızmasın)
+                if (kullanici is null ||
+                    _hasher.VerifyHashedPassword(kullanici, kullanici.SifreHash, istek.Sifre) == PasswordVerificationResult.Failed)
+                    throw new HesapHatasi("E-posta veya şifre hatalı.");   // controller → 401
+
+                return OturumOlustur(kullanici);   // JWT üret
             }
             """),
 

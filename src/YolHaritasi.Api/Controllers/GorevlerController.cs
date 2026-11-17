@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Auth;
 using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Services;
 
@@ -19,7 +20,7 @@ public class GorevlerController(IIlerlemeServisi ilerleme) : ControllerBase
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> DurumDegistir(int id, [FromBody] GorevDurumIstegi istek)
     {
-        var bulundu = await ilerleme.GorevDurumuDegistirAsync(id, istek.Tamamlandi);
+        var bulundu = await ilerleme.GorevDurumuDegistirAsync(User.KullaniciId(), id, istek.Tamamlandi);
         return bulundu ? NoContent() : NotFound(new HataDto($"{id} numaralı görev bulunamadı."));
     }
 }

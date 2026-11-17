@@ -15,7 +15,7 @@ public static partial class BaslangicVerisi
                 Id               int IDENTITY(1,1) NOT NULL,
                 Baslik           nvarchar(200)     NOT NULL,
                 Sira             int               NOT NULL,
-                TamamlanmaTarihi datetime2         NULL,
+                DersNotu         nvarchar(max)     NULL,
                 AlanId           int               NOT NULL,
                 CONSTRAINT PK_Konular PRIMARY KEY (Id)
             );
@@ -52,10 +52,10 @@ public static partial class BaslangicVerisi
 
         ["NULL"] = T("Bilinmeyen veya henüz olmayan değerler: tamamlanmamış konunun tarihi, girilmemiş telefon numarası. NULL ile karşılaştırma = ile değil IS ile yapılır.", "sql", """
             -- Tamamlanmamış konular
-            SELECT Baslik FROM Konular WHERE TamamlanmaTarihi IS NULL;
+            SELECT Ad FROM Terimler WHERE Ornek IS NULL;
 
             -- ❌ Bu HİÇBİR satır döndürmez (NULL = NULL bile 'bilinmiyor'dur):
-            SELECT Baslik FROM Konular WHERE TamamlanmaTarihi = NULL;
+            SELECT Ad FROM Terimler WHERE Ornek = NULL;
 
             -- NULL yerine varsayılan değer göster
             SELECT Ad, ISNULL(Ornek, '(örnek yok)') AS Ornek FROM Terimler;
@@ -78,7 +78,7 @@ public static partial class BaslangicVerisi
             WHERE TahminiDakika >= 90                  -- karşılaştırma
               AND Baslik LIKE '%SQL%'                  -- metin içinde arama
               AND AlanId IN (1, 2)                     -- liste
-              AND TamamlanmaTarihi IS NULL;            -- NULL kontrolü
+              AND DersNotu IS NOT NULL;                -- NULL kontrolü
             """),
 
         ["ORDER BY"] = T("Listeler hep bir sıraya göre gösterilir: en yeni önce, alfabetik, öncelik sırası. ORDER BY yazılmazsa sıra GARANTİ değildir.", "sql", """
@@ -86,16 +86,20 @@ public static partial class BaslangicVerisi
             SELECT TOP 1 a.Ad, k.Baslik
             FROM Konular k
             JOIN Alanlar a ON a.Id = k.AlanId
-            WHERE k.TamamlanmaTarihi IS NULL
+            WHERE NOT EXISTS (SELECT 1 FROM KonuIlerlemeleri i     -- 1 numaralı kullanıcının
+                              WHERE i.KonuId = k.Id AND i.KullaniciId = 1)   -- tamamlamadıkları
             ORDER BY a.Sira ASC, k.Sira ASC;      -- önce alan sırası, sonra konu sırası
             """),
 
-        ["INSERT / UPDATE / DELETE"] = T("Veri değiştiren komutlar. Uygulamada 'Konuyu tamamladım'a basınca bir UPDATE çalışır. SSMS'te elle çalıştırırken WHERE'i unutma!", "sql", """
+        ["INSERT / UPDATE / DELETE"] = T("Veri değiştiren komutlar. Uygulamada 'Konuyu tamamladım'a basınca bir INSERT çalışır. SSMS'te elle çalıştırırken WHERE'i unutma!", "sql", """
             -- Uygulama "Konuyu tamamladım"da bunu çalıştırıyor:
-            UPDATE Konular SET TamamlanmaTarihi = SYSUTCDATETIME() WHERE Id = 5;
+            INSERT INTO KonuIlerlemeleri (KullaniciId, KonuId, TamamlanmaTarihi)
+            VALUES (1, 5, SYSUTCDATETIME());
 
-            INSERT INTO Gorevler (Aciklama, Sira, Tamamlandi, KonuId)
-            VALUES ('Yeni görev', 3, 0, 5);
+            UPDATE Konular SET TahminiDakika = 75 WHERE Id = 5;
+
+            INSERT INTO Gorevler (Aciklama, Sira, KonuId)
+            VALUES ('Yeni görev', 3, 5);
 
             DELETE FROM Gorevler WHERE Id = 47;
 
@@ -146,28 +150,30 @@ public static partial class BaslangicVerisi
             // SQL'de: Konular tablosunda AlanId sütunu (FK) → Alanlar.Id
             """),
 
-        ["Many-to-Many"] = T("Öğrenci ↔ ders, ürün ↔ kategori, kullanıcı ↔ rol. Araya bir bağlantı (junction) tablosu gerekir. Kullanıcı sistemi eklenince Kullanici ↔ Konu ilişkisi böyle olacak.", "sql", """
-            -- Adım 3'te eklenecek bağlantı tablosu (taslak)
-            CREATE TABLE KullaniciIlerleme (
+        ["Many-to-Many"] = T("Öğrenci ↔ ders, ürün ↔ kategori, kullanıcı ↔ rol. Araya bir bağlantı (junction) tablosu gerekir. Bu projede Kullanicilar ↔ Konular ilişkisi KonuIlerlemeleri tablosuyla kuruluyor.", "sql", """
+            -- Bu projedeki bağlantı tablosu (EF Core migration'ının ürettiği yapı)
+            CREATE TABLE KonuIlerlemeleri (
                 KullaniciId      int NOT NULL REFERENCES Kullanicilar(Id),
                 KonuId           int NOT NULL REFERENCES Konular(Id),
                 TamamlanmaTarihi datetime2 NOT NULL,
                 PRIMARY KEY (KullaniciId, KonuId)        -- bileşik anahtar
             );
 
-            -- Emre'nin tamamladığı konular
-            SELECT k.Baslik FROM KullaniciIlerleme ki
+            -- 1 numaralı kullanıcının tamamladığı konular (Pratik Alanı'nda çalışır)
+            SELECT k.Baslik, ki.TamamlanmaTarihi
+            FROM KonuIlerlemeleri ki
             JOIN Konular k ON k.Id = ki.KonuId
             WHERE ki.KullaniciId = 1;
             """),
 
         ["GROUP BY / COUNT"] = T("Raporlar ve istatistikler: kategori başına satış, gün başına kayıt, alan başına ilerleme. Alanlar ekranındaki yüzdeler böyle hesaplanıyor.", "sql", """
-            -- Her alanın toplam ve tamamlanan konu sayısı (Alanlar ekranının SQL karşılığı)
+            -- Her alanın toplam ve 1 numaralı kullanıcının tamamladığı konu sayısı (Alanlar ekranının SQL karşılığı)
             SELECT a.Ad,
                    COUNT(*) AS Toplam,
-                   SUM(CASE WHEN k.TamamlanmaTarihi IS NOT NULL THEN 1 ELSE 0 END) AS Tamamlanan
+                   COUNT(ki.KonuId) AS Tamamlanan          -- COUNT(sütun) NULL'ları saymaz
             FROM Konular k
             JOIN Alanlar a ON a.Id = k.AlanId
+            LEFT JOIN KonuIlerlemeleri ki ON ki.KonuId = k.Id AND ki.KullaniciId = 1
             GROUP BY a.Ad
             HAVING COUNT(*) > 5;        -- grupları filtrele (WHERE satırları, HAVING grupları filtreler)
             """),
@@ -234,7 +240,7 @@ public static partial class BaslangicVerisi
             -- IX_Kaynaklar_KonuId    → foreign key'lere otomatik
 
             -- Elle index oluşturma
-            CREATE INDEX IX_Konular_TamamlanmaTarihi ON Konular (TamamlanmaTarihi);
+            CREATE INDEX IX_KonuIlerlemeleri_TamamlanmaTarihi ON KonuIlerlemeleri (TamamlanmaTarihi);
 
             -- Mevcut index'leri listele (Pratik Alanı'nda çalışır)
             SELECT t.name AS Tablo, i.name AS IndexAdi, i.is_unique

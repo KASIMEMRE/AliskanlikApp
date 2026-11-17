@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Entities;
 using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Services;
 
@@ -17,6 +19,9 @@ public class VeritabaniController(VeritabaniServisi servis, IWebHostEnvironment 
 
     /// <summary>Sadece okuma (SELECT) sorgusu çalıştırır. Yalnızca geliştirme ortamında açıktır.</summary>
     // POST /api/veritabani/sorgu    gövde: { "sql": "SELECT * FROM Alanlar" }
+    // Adım 4: Artık Kullanicilar tablosunda şifre hash'leri var. Herkes SQL çalıştırabilirse başkalarının
+    // hash'lerini görebilir. Bu yüzden sadece Admin rolü (ilk kayıt olan kullanıcı) çalıştırabilir → diğerlerine 403.
+    [Authorize(Roles = Roller.Admin)]
     [HttpPost("sorgu")]
     public async Task<ActionResult<SorguSonucuDto>> Sorgu([FromBody] SorguIstegi istek)
     {

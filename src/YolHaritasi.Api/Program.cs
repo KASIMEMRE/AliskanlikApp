@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using YolHaritasi.Api.Auth;
 using YolHaritasi.Api.Data;
 using YolHaritasi.Api.Services;
 
@@ -47,6 +51,47 @@ builder.Services.AddScoped<IIlerlemeServisi, IlerlemeServisi>();
 
 // Interface'siz kayıt da mümkün: "Biri VeritabaniServisi isterse yenisini ver."
 builder.Services.AddScoped<VeritabaniServisi>();
+builder.Services.AddScoped<HesapServisi>();
+builder.Services.AddSingleton<TokenServisi>();   // durum tutmuyor, herkes aynı nesneyi kullanabilir
+
+// ---------------------------------------------------------------------------
+//  KİMLİK DOĞRULAMA (Authentication) ve YETKİLENDİRME (Authorization) — Adım 4
+// ---------------------------------------------------------------------------
+// OPTIONS PATTERN: appsettings'teki "Jwt" bölümünü JwtAyarlari sınıfına bağla.
+builder.Services.Configure<JwtAyarlari>(builder.Configuration.GetSection(JwtAyarlari.Bolum));
+var jwt = builder.Configuration.GetSection(JwtAyarlari.Bolum).Get<JwtAyarlari>() ?? new JwtAyarlari();
+
+// FAIL FAST: Ayar eksikse uygulama hiç başlamasın; hatayı canlıda ilk istekte değil, açılışta görelim.
+if (jwt.Anahtar.Length < 32)
+    throw new InvalidOperationException(
+        "Jwt:Anahtar ayarı eksik veya 32 karakterden kısa. Geliştirmede appsettings.Development.json'a, " +
+        "sunucuda ortam değişkenine (Jwt__Anahtar) yaz.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)   // "Bearer" token ile kimlik doğrula
+    .AddJwtBearer(options =>
+    {
+        // Claim adlarını olduğu gibi bırak ("sub" → "sub"). Aksi halde .NET bunları uzun URL'li adlara çevirir.
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,            ValidIssuer = jwt.Yayinci,
+            ValidateAudience = true,          ValidAudience = jwt.Hedef,
+            ValidateLifetime = true,          // süresi dolmuş token → 401
+            ValidateIssuerSigningKey = true,  IssuerSigningKey = TokenServisi.ImzaAnahtari(jwt),
+            NameClaimType = KullaniciUzantilari.AdClaim,
+            RoleClaimType = KullaniciUzantilari.RolClaim,   // [Authorize(Roles = "Admin")] bu claim'e bakar
+            ClockSkew = TimeSpan.FromMinutes(1),
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    // FALLBACK POLICY: Üzerinde hiçbir [Authorize]/[AllowAnonymous] olmayan TÜM endpoint'ler giriş ister.
+    // "Varsayılan olarak kapalı" (secure by default): Yeni bir endpoint yazıp [Authorize] koymayı unutsan bile korunur.
+    // Herkese açık olması gerekenlere açıkça [AllowAnonymous] yazıyoruz (HesapController'a bak).
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+});
 
 var app = builder.Build();
 
@@ -72,8 +117,9 @@ if (app.Environment.IsDevelopment())
 // ---------------------------------------------------------------------------
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();               // GET /openapi/v1.json
-    app.MapScalarApiReference(o => o.WithTitle("Yol Haritası API"));   // GET /scalar → API'yi deneyebileceğin arayüz
+    // Dokümantasyon sayfaları giriş istemesin (fallback policy'den muaf)
+    app.MapOpenApi().AllowAnonymous();               // GET /openapi/v1.json
+    app.MapScalarApiReference(o => o.WithTitle("Yol Haritası API")).AllowAnonymous();   // GET /scalar
 }
 
 app.UseHttpsRedirection();          // http ile gelen isteği https'e yönlendirir
@@ -83,6 +129,10 @@ app.UseHttpsRedirection();          // http ile gelen isteği https'e yönlendir
 // UseStaticFiles: Dosyayı diskten okuyup gönderir. Sıra önemli: önce DefaultFiles, sonra StaticFiles.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Sıra önemli: önce "kimsin?" (token'ı oku), sonra "iznin var mı?" (policy'leri uygula).
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();               // Controller'lardaki [Route]/[HttpGet] tanımlarını endpoint olarak bağla
 

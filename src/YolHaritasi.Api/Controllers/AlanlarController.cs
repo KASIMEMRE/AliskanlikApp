@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Auth;
 using Microsoft.EntityFrameworkCore;
 using YolHaritasi.Api.Data;
 using YolHaritasi.Api.Dtos;
@@ -21,6 +22,8 @@ public class AlanlarController(UygulamaDbContext db) : ControllerBase
     [HttpGet]
     public async Task<List<AlanOzetDto>> Listele()
     {
+        var kullaniciId = User.KullaniciId();
+
         // Bu sorgu SQL Server'da tek bir SELECT'e dönüşür; COUNT'lar alt sorgu olarak hesaplanır.
         // Tüm konuları belleğe çekip C#'ta saymaktan çok daha verimlidir.
         var alanlar = await db.Alanlar
@@ -32,7 +35,7 @@ public class AlanlarController(UygulamaDbContext db) : ControllerBase
                 a.Ad,
                 a.Aciklama,
                 Toplam = a.Konular.Count,
-                Tamamlanan = a.Konular.Count(k => k.TamamlanmaTarihi != null),
+                Tamamlanan = a.Konular.Count(k => k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId)),
             })
             .ToListAsync();
 
@@ -48,6 +51,7 @@ public class AlanlarController(UygulamaDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AlanDetayDto>> Getir(int id)
     {
+        var kullaniciId = User.KullaniciId();
         var alan = await db.Alanlar
             .AsNoTracking()
             .Where(a => a.Id == id)
@@ -57,7 +61,8 @@ public class AlanlarController(UygulamaDbContext db) : ControllerBase
                 a.Aciklama,
                 a.Konular
                     .OrderBy(k => k.Sira)
-                    .Select(k => new KonuOzetDto(k.Id, k.Sira, k.Baslik, k.Ozet, k.TahminiDakika, k.TamamlanmaTarihi != null))
+                    .Select(k => new KonuOzetDto(k.Id, k.Sira, k.Baslik, k.Ozet, k.TahminiDakika,
+                        k.Ilerlemeler.Any(i => i.KullaniciId == kullaniciId)))
                     .ToList()))
             .FirstOrDefaultAsync();
 

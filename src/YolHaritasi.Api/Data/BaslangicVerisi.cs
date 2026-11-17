@@ -5,12 +5,12 @@ namespace YolHaritasi.Api.Data;
 
 /// <summary>
 /// SEED DATA (tohum / başlangıç verisi): Veritabanına konan hazır içerik.
-/// Uygulama her açıldığında çalışır ama sadece EKSİK olanı ekler:
+/// Uygulama her açıldığında çalışır:
 ///   1) Veritabanında olmayan alanları (konuları, terimleri, görevleriyle) ekler
-///   2) Ders notu boş olan konulara ders notunu yazar
+///   2) Var olan içeriği (başlık, ders notu, terim tanımı ve örnekleri, görev metinleri) koddaki haliyle günceller
 ///   3) Hiç kaynağı olmayan konulara kaynak linklerini ekler
-///   4) Hiç projesi olmayan alanlara projelerini ekler
-/// Var olan veriye ve senin ilerlemene (tamamlanan konular, işaretlenen görevler) dokunmaz.
+///   4) Projeleri ekler veya metinlerini günceller
+/// Kullanıcıların ilerlemesine (KonuIlerlemeleri vb.) dokunmaz.
 /// Kaç kez çalışırsa çalışsın sonuç aynıdır; bu özelliğe IDEMPOTENT denir.
 ///
 /// Dosya "partial": İçerik büyük olduğu için BaslangicVerisi.*.cs dosyalarına bölündü.
@@ -31,54 +31,105 @@ public static partial class BaslangicVerisi
         // SaveChangesAsync tüm INSERT'leri tek bir TRANSACTION içinde gönderir: ya hepsi kaydedilir ya hiçbiri.
         await db.SaveChangesAsync();
 
-        // ---- 2) ve 3) Ders notları ve kaynaklar ----
-        // Include: İlişkili tabloyu da aynı sorguda getir (SQL'de JOIN). Kaynak sayısına bakacağımız için gerekli.
+        // ---- 2) İÇERİK SENKRONİZASYONU (Adım 4) ----
+        // Kural: İÇERİK kodda yaşar (başlık, özet, ders notu, terim tanımı, örnekler, görev metinleri);
+        //        İLERLEME veritabanında yaşar (KonuIlerlemeleri vb.).
+        // Kodda bir içerik düzeltildiğinde, uygulama açılışta veritabanındaki karşılığını günceller.
+        // Kayıtlar Id ile değil, DOĞAL ANAHTARLA eşlenir: (alan adı, konu sırası), terim adı, görev sırası.
+        // Çünkü Id'ler her veritabanında farklı olabilir. İlerleme tabloları Id'ye bağlı olduğu için
+        // satırları silip yeniden eklemiyoruz; sadece metinlerini güncelliyoruz → ilerleme korunur.
+        var koddakiKonular = tumAlanlar
+            .SelectMany(a => a.Konular.Select(k => (Alan: a.Ad, Konu: k)))
+            .ToDictionary(x => (x.Alan, x.Konu.Sira), x => x.Konu);
+
         var konular = await db.Konular
             .Include(k => k.Alan)
             .Include(k => k.Kaynaklar)
+            .Include(k => k.Terimler)
+            .Include(k => k.Gorevler)
+            .AsSplitQuery()   // 4 Include'u tek dev JOIN yerine ayrı sorgularla getir (satır patlamasını önler)
             .ToListAsync();
 
         foreach (var konu in konular)
         {
             var anahtar = (konu.Alan.Ad, konu.Sira);
 
-            if (konu.DersNotu is null && DersNotlari.TryGetValue(anahtar, out var not))
-                konu.DersNotu = not;   // EF Core bu değişikliği takip ediyor → UPDATE üretecek
+            if (koddakiKonular.TryGetValue(anahtar, out var kod))
+            {
+                // EF Core değeri değişen property'leri fark eder ve sadece onlar için UPDATE üretir.
+                konu.Baslik = kod.Baslik;
+                konu.Ozet = kod.Ozet;
+                konu.TahminiDakika = kod.TahminiDakika;
+
+                foreach (var terim in konu.Terimler)
+                {
+                    var kodTerim = kod.Terimler.FirstOrDefault(t => t.Ad == terim.Ad);
+                    if (kodTerim is null) continue;
+                    terim.Tanim = kodTerim.Tanim;
+                    terim.Ornek = kodTerim.Ornek;
+                }
+
+                foreach (var gorev in konu.Gorevler)
+                {
+                    var kodGorev = kod.Gorevler.FirstOrDefault(g => g.Sira == gorev.Sira);
+                    if (kodGorev is not null) gorev.Aciklama = kodGorev.Aciklama;
+                }
+            }
+
+            if (DersNotlari.TryGetValue(anahtar, out var not))
+                konu.DersNotu = not;
 
             if (konu.Kaynaklar.Count == 0)
                 konu.Kaynaklar.AddRange(KaynaklariOlustur(konu.Alan.Ad, konu.Sira));   // → INSERT
-        }
 
-        // ---- 3b) Terimlerin gerçek kullanım örnekleri (Adım 3) ----
-        // Örneği henüz olmayan terimlere, adına göre örnek yaz.
-        // Aynı adlı terim farklı alanlarda farklı anlama gelebilir ("Index": C#'ta liste sırası, SQL'de veritabanı
-        // dizini). Bu yüzden önce terimin kendi alanının sözlüğüne bakıyoruz:
-        //   C# Temelleri / Backend → TerimOrnekleri1,   SQL / Sunucu / Yapay Zeka → TerimOrnekleri2
-        var ornekBekleyenler = await db.Terimler
-            .Include(t => t.Konu).ThenInclude(k => k.Alan)
-            .Where(t => t.KodOrnegi == null)
-            .ToListAsync();
-
-        foreach (var terim in ornekBekleyenler)
-        {
-            var (once, sonra) = terim.Konu.Alan.Ad is "C# Temelleri" or "Backend"
+            // ---- Terimlerin gerçek kullanım örnekleri ----
+            // Aynı adlı terim farklı alanlarda farklı anlama gelebilir ("Index": C#'ta liste sırası, SQL'de
+            // veritabanı dizini). Bu yüzden önce terimin kendi alanının sözlüğüne bakıyoruz:
+            //   C# Temelleri / Backend → TerimOrnekleri1,   SQL / Sunucu / Yapay Zeka → TerimOrnekleri2
+            var (once, sonra) = konu.Alan.Ad is "C# Temelleri" or "Backend"
                 ? (TerimOrnekleri1, TerimOrnekleri2)
                 : (TerimOrnekleri2, TerimOrnekleri1);
 
-            if (once.TryGetValue(terim.Ad, out var o) || sonra.TryGetValue(terim.Ad, out o))
+            foreach (var terim in konu.Terimler)
             {
-                terim.Kullanim = o.Kullanim;
-                terim.KodDili = o.Dil;
-                terim.KodOrnegi = o.Kod;
+                if (once.TryGetValue(terim.Ad, out var o) || sonra.TryGetValue(terim.Ad, out o))
+                {
+                    terim.Kullanim = o.Kullanim;
+                    terim.KodDili = o.Dil;
+                    terim.KodOrnegi = o.Kod;
+                }
             }
         }
 
-        // ---- 4) Projeler ----
-        var alanlar = await db.Alanlar.Include(a => a.Projeler).ToListAsync();
-        foreach (var alan in alanlar.Where(a => a.Projeler.Count == 0))
+        // ---- 3) Projeler ----
+        var alanlar = await db.Alanlar.Include(a => a.Projeler).ThenInclude(p => p.Adimlar).ToListAsync();
+        foreach (var alan in alanlar)
         {
-            if (ProjeListesi.TryGetValue(alan.Ad, out var projeler))
-                alan.Projeler.AddRange(projeler);
+            if (!ProjeListesi.TryGetValue(alan.Ad, out var koddakiProjeler))
+                continue;
+
+            if (alan.Projeler.Count == 0)
+            {
+                alan.Projeler.AddRange(koddakiProjeler);
+                continue;
+            }
+
+            // Var olan projelerin metinlerini güncelle (sıra numarasıyla eşle)
+            foreach (var proje in alan.Projeler)
+            {
+                var kodProje = koddakiProjeler.FirstOrDefault(p => p.Sira == proje.Sira);
+                if (kodProje is null) continue;
+                proje.Baslik = kodProje.Baslik;
+                proje.Aciklama = kodProje.Aciklama;
+                proje.Zorluk = kodProje.Zorluk;
+                foreach (var adim in proje.Adimlar)
+                {
+                    var kodAdim = kodProje.Adimlar.FirstOrDefault(a => a.Sira == adim.Sira);
+                    if (kodAdim is null) continue;
+                    adim.Aciklama = kodAdim.Aciklama;
+                    adim.Ipucu = kodAdim.Ipucu;
+                }
+            }
         }
 
         // Değişiklik yoksa SaveChanges veritabanına hiçbir komut göndermez.
@@ -198,7 +249,7 @@ public static partial class BaslangicVerisi
                 ("Row / Column", "Satır (row) bir kayıttır, sütun (column) kaydın bir özelliğidir.", null),
                 ("Primary Key", "Her satırı benzersiz tanımlayan sütun.", "Konular.Id"),
                 ("Foreign Key", "Başka bir tablonun primary key'ine işaret eden sütun; tablolar arası ilişkiyi kurar.", "Konular.AlanId → Alanlar.Id"),
-                ("NULL", "'Değer yok' demek. 0 veya boş metin ile aynı şey değildir.", "Konular.TamamlanmaTarihi"),
+                ("NULL", "'Değer yok' demek. 0 veya boş metin ile aynı şey değildir.", "Terimler.Ornek"),
                 ("Data Type", "Sütunun ne tür veri tuttuğu.", "int, nvarchar(200), bit, datetime2"),
             ],
             [
@@ -209,14 +260,14 @@ public static partial class BaslangicVerisi
             K(2, "Temel SQL Komutları", "Veriyi okumak, filtrelemek, eklemek, güncellemek, silmek.", 90,
             [
                 ("SELECT", "Veri okuma.", "SELECT Baslik, Sira FROM Konular"),
-                ("WHERE", "Filtreleme.", "SELECT * FROM Konular WHERE TamamlanmaTarihi IS NULL"),
+                ("WHERE", "Filtreleme.", "SELECT * FROM Konular WHERE TahminiDakika > 60"),
                 ("ORDER BY", "Sıralama.", "SELECT * FROM Konular ORDER BY Sira DESC"),
-                ("INSERT / UPDATE / DELETE", "Ekleme / güncelleme / silme. UPDATE ve DELETE'de WHERE unutmak tüm tabloyu etkiler!", "UPDATE Gorevler SET Tamamlandi = 1 WHERE Id = 5"),
+                ("INSERT / UPDATE / DELETE", "Ekleme / güncelleme / silme. UPDATE ve DELETE'de WHERE unutmak tüm tabloyu etkiler!", "UPDATE Konular SET TahminiDakika = 75 WHERE Id = 5"),
                 ("CRUD", "Create, Read, Update, Delete: veri üzerindeki dört temel işlem.", null),
             ],
             [
                 "SSMS'te tamamlanmamış konuları listeleyen bir sorgu yaz.",
-                "Uygulamadan bir konuyu tamamla, sonra SSMS'te TamamlanmaTarihi sütununun dolduğunu gör.",
+                "Uygulamadan bir konuyu tamamla, sonra SSMS'te KonuIlerlemeleri tablosuna yeni bir satır eklendiğini gör.",
             ]),
 
             K(3, "Tablo Birleştirme (JOIN) ve İlişki Türleri", "Birden fazla tabloyu birleştirerek sorgulamak.", 90,
@@ -224,7 +275,7 @@ public static partial class BaslangicVerisi
                 ("JOIN", "İki tabloyu ortak bir sütun üzerinden birleştirme.", "SELECT a.Ad, k.Baslik FROM Konular k JOIN Alanlar a ON a.Id = k.AlanId"),
                 ("INNER JOIN / LEFT JOIN", "INNER sadece eşleşenleri, LEFT soldaki tablonun tamamını (eşleşmeyenlerde NULL) getirir.", null),
                 ("One-to-Many", "Bire çok ilişki: Bir alanın çok konusu var.", "Alan → Konular"),
-                ("Many-to-Many", "Çoka çok ilişki; araya bir bağlantı tablosu gerekir.", "Kullanıcılar ↔ Konular (ileride: KullaniciIlerleme tablosu)"),
+                ("Many-to-Many", "Çoka çok ilişki; araya bir bağlantı tablosu gerekir.", "Kullanicilar ↔ Konular (bağlantı tablosu: KonuIlerlemeleri)"),
                 ("GROUP BY / COUNT", "Gruplayıp saymak.", "SELECT AlanId, COUNT(*) FROM Konular GROUP BY AlanId"),
             ],
             [

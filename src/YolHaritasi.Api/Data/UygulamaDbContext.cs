@@ -24,6 +24,12 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
     public DbSet<Proje> Projeler => Set<Proje>();
     public DbSet<ProjeAdimi> ProjeAdimlari => Set<ProjeAdimi>();
 
+    // ---- Adım 4: kullanıcılar ve kişisel ilerleme ----
+    public DbSet<Kullanici> Kullanicilar => Set<Kullanici>();
+    public DbSet<KonuIlerleme> KonuIlerlemeleri => Set<KonuIlerleme>();
+    public DbSet<GorevIlerleme> GorevIlerlemeleri => Set<GorevIlerleme>();
+    public DbSet<ProjeAdimIlerleme> ProjeAdimIlerlemeleri => Set<ProjeAdimIlerleme>();
+
     /// <summary>
     /// FLUENT API: Tabloların detaylı ayarlarını (sütun uzunluğu, index, ilişki) burada yapıyoruz.
     /// Buradaki her ayar MIGRATION'a yansır ve sonunda SQL'e (CREATE TABLE ...) dönüşür.
@@ -95,6 +101,36 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
             e.ToTable("ProjeAdimlari");
             e.Property(x => x.Aciklama).HasMaxLength(1000).IsRequired();
             e.Property(x => x.Ipucu).HasMaxLength(1000);
+        });
+
+        // ---- Adım 4: kullanıcılar ve kişisel ilerleme ----
+        modelBuilder.Entity<Kullanici>(e =>
+        {
+            e.Property(x => x.Ad).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            e.Property(x => x.SifreHash).HasMaxLength(500).IsRequired();
+            e.Property(x => x.Rol).HasMaxLength(20).IsRequired();
+            e.HasIndex(x => x.Email).IsUnique();   // aynı e-postayla iki hesap açılamaz
+        });
+
+        // HasKey(x => new { ... }) → COMPOSITE PRIMARY KEY (iki sütunlu birincil anahtar)
+        modelBuilder.Entity<KonuIlerleme>(e =>
+        {
+            e.HasKey(x => new { x.KullaniciId, x.KonuId });
+            e.HasOne(x => x.Kullanici).WithMany(k => k.KonuIlerlemeleri).HasForeignKey(x => x.KullaniciId);
+            e.HasOne(x => x.Konu).WithMany(k => k.Ilerlemeler).HasForeignKey(x => x.KonuId);
+        });
+
+        modelBuilder.Entity<GorevIlerleme>(e =>
+        {
+            e.HasKey(x => new { x.KullaniciId, x.GorevId });
+            e.HasOne(x => x.Gorev).WithMany(g => g.Ilerlemeler).HasForeignKey(x => x.GorevId);
+        });
+
+        modelBuilder.Entity<ProjeAdimIlerleme>(e =>
+        {
+            e.HasKey(x => new { x.KullaniciId, x.ProjeAdimiId });
+            e.HasOne(x => x.ProjeAdimi).WithMany(a => a.Ilerlemeler).HasForeignKey(x => x.ProjeAdimiId);
         });
     }
 }
