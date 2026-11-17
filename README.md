@@ -43,10 +43,6 @@ Bu repo iki şeydir:
 | ✅ 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
 | ✅ 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
 | 5 | IIS'e yayın | Publish, App Pool, binding, HTTPS, web.config |
-| 6 | Günlük hatırlatma Windows Service'i + Registry'den ayar | Worker Service, sc.exe, Registry, Event Viewer |
-| 7 | 🤖 AI Mentor: terimi basitçe anlat, quiz üret | LLM, prompt, Microsoft.Extensions.AI |
-| 8 | 🤖 AI'ın uygulamayı kullanması, anlamsal terim arama | Tool calling, embedding, RAG |
-| 9 | 📱 Mobil uygulama (.NET MAUI) | MAUI, HttpClient, MVVM |
 | 10 | Docker, CI/CD, cache | Container, GitHub Actions, Redis |
 
 ## ▶️ Çalıştırma (Windows)
