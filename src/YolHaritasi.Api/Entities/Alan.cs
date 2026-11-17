@@ -24,4 +24,5 @@ public class Alan
     // NAVIGATION PROPERTY (gezinme özelliği): Tabloda sütun DEĞİLDİR.
     // "Bir Alan'ın birden çok Konu'su vardır" ilişkisini (1'e çok / one-to-many) C# tarafında ifade eder.
     public List<Konu> Konular { get; set; } = [];
+    public List<Proje> Projeler { get; set; } = [];
 }

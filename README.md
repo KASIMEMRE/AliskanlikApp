@@ -1,15 +1,17 @@
-# 🗺️ Yol Haritası: Backend · SQL · Sunucu · Yapay Zeka
+# 🗺️ Yol Haritası: C# · Backend · SQL · Sunucu · Yapay Zeka
 
 Bu repo iki şeydir:
 
-1. **Bir uygulama:** Backend, SQL, Windows Sunucu ve Yapay Zeka öğrenme yol haritasını sunar.
-   "Bugün ne çalışmalıyım?", terim sözlüğü, görevler ve ilerleme takibi içerir.
+1. **Bir uygulama:** C#, Backend, SQL, Windows Sunucu ve Yapay Zeka öğrenme yol haritasını sunar.
+   "Bugün ne çalışmalıyım?", Türkçe ders notları, W3Schools / Microsoft Learn kaynakları, terim sözlüğü,
+   proje görevleri, veritabanı ekranı ve SQL pratik alanı içerir.
 2. **Bir ders kitabı:** Uygulama adım adım geliştiriliyor. Her adımda kodu okuyarak
    **neyin neden yapıldığını** takip ediyorsun.
 
 ## 📚 Nasıl takip edilir?
 - Her geliştirme adımı `docs/` klasöründe anlatılır. **Sırayla oku:**
   - [Adım 1: Proje yapısı, SQL Server ve ilk API](docs/adim-01.md)
+  - [Adım 2: Ders notları, kaynaklar, projeler ve veritabanı ekranı](docs/adim-02.md)
 - Kodda ne değiştiğini görmek için GitHub'da **Commits** sekmesine bak. Her commit bir adımdır.
 - Kod dosyalarındaki yorumlar da anlatımın parçası.
 
@@ -24,15 +26,16 @@ Bu repo iki şeydir:
                                                             │ SQL
                                                             ▼
                                                    🗄️ SQL Server
-                                     (Alanlar · Konular · Terimler · Gorevler)
+              (Alanlar · Konular · Terimler · Gorevler · Kaynaklar · Projeler · ProjeAdimlari)
 ```
 
 ## 🛣️ Geliştirme planı
 | Adım | Uygulamaya eklenecek | Öğrenilecek |
 |---|---|---|
 | ✅ 1 | Proje, SQL Server, tablolar, yol haritası verisi, okuma/tamamlama API'leri | Web API, Controller, DI, EF Core, Migration, DTO |
-| 2 | Not alma, çalışma oturumu (süre) kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY, ham SQL vs LINQ |
-| 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many |
+| ✅ 2 | C# Temelleri, ders notları, kaynaklar, projeler, veritabanı ekranı, SQL pratik alanı | İkinci migration, ADO.NET, ExecuteUpdate, güvenlik katmanları |
+| 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many, veri taşıma |
+| 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
 | 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
 | 5 | IIS'e yayın | Publish, App Pool, binding, HTTPS, web.config |
 | 6 | Günlük hatırlatma Windows Service'i + Registry'den ayar | Worker Service, sc.exe, Registry, Event Viewer |

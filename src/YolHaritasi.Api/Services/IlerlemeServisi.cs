@@ -69,8 +69,10 @@ public class IlerlemeServisi(UygulamaDbContext db, ILogger<IlerlemeServisi> logg
                 k.Ozet,
                 k.TahminiDakika,
                 k.TamamlanmaTarihi,
+                k.DersNotu,
                 k.Terimler.OrderBy(t => t.Id).Select(t => new TerimDto(t.Id, t.Ad, t.Tanim, t.Ornek)).ToList(),
-                k.Gorevler.OrderBy(g => g.Sira).Select(g => new GorevDto(g.Id, g.Sira, g.Aciklama, g.Tamamlandi)).ToList()))
+                k.Gorevler.OrderBy(g => g.Sira).Select(g => new GorevDto(g.Id, g.Sira, g.Aciklama, g.Tamamlandi)).ToList(),
+                k.Kaynaklar.OrderBy(x => x.Sira).Select(x => new KaynakDto(x.Baslik, x.Url, x.Site)).ToList()))
             .FirstOrDefaultAsync();
     }
 

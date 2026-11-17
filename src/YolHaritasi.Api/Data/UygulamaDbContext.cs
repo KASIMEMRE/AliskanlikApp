@@ -20,6 +20,9 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
     public DbSet<Konu> Konular => Set<Konu>();
     public DbSet<Terim> Terimler => Set<Terim>();
     public DbSet<Gorev> Gorevler => Set<Gorev>();
+    public DbSet<Kaynak> Kaynaklar => Set<Kaynak>();
+    public DbSet<Proje> Projeler => Set<Proje>();
+    public DbSet<ProjeAdimi> ProjeAdimlari => Set<ProjeAdimi>();
 
     /// <summary>
     /// FLUENT API: Tabloların detaylı ayarlarını (sütun uzunluğu, index, ilişki) burada yapıyoruz.
@@ -67,6 +70,28 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
         modelBuilder.Entity<Gorev>(e =>
         {
             e.Property(x => x.Aciklama).HasMaxLength(500).IsRequired();
+        });
+
+        // ---- Adım 2'de eklenen tablolar ----
+        modelBuilder.Entity<Kaynak>(e =>
+        {
+            e.Property(x => x.Baslik).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Url).HasMaxLength(500).IsRequired();
+            e.Property(x => x.Site).HasMaxLength(50).IsRequired();
+        });
+
+        modelBuilder.Entity<Proje>(e =>
+        {
+            e.Property(x => x.Baslik).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Aciklama).HasMaxLength(2000);
+            e.Property(x => x.Zorluk).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<ProjeAdimi>(e =>
+        {
+            e.ToTable("ProjeAdimlari");
+            e.Property(x => x.Aciklama).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Ipucu).HasMaxLength(1000);
         });
     }
 }

@@ -13,6 +13,10 @@ public class Konu
     // Alan içindeki sırası (1, 2, 3...)
     public int Sira { get; set; }
 
+    // DERS NOTU: Konunun Türkçe anlatımı (Markdown biçiminde: başlıklar, listeler, kod blokları).
+    // Uzun metin olduğu için SQL Server'da nvarchar(max) olur. Yazılmamışsa NULL.
+    public string? DersNotu { get; set; }
+
     // Tahmini çalışma süresi (dakika)
     public int TahminiDakika { get; set; }
 
@@ -29,4 +33,5 @@ public class Konu
     public Alan Alan { get; set; } = null!;
     public List<Terim> Terimler { get; set; } = [];
     public List<Gorev> Gorevler { get; set; } = [];
+    public List<Kaynak> Kaynaklar { get; set; } = [];
 }

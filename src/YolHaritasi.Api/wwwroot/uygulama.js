@@ -25,7 +25,46 @@ async function api(adres, secenekler = {}) {
 function guvenli(metin) {
   const d = document.createElement("div");
   d.textContent = metin ?? "";
-  return d.innerHTML;
+  // Tırnakları da kaçırıyoruz; çünkü bazı değerler href="..." gibi HTML özniteliklerinin içine giriyor.
+  return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// --- Basit Markdown → HTML çevirici (ders notları için) -----------------------
+// Önce TÜM metni guvenli() ile kaçırıyoruz, sonra sadece kendi ürettiğimiz etiketleri ekliyoruz.
+// Böylece veritabanındaki metin asla HTML/JavaScript olarak çalışamaz.
+function markdown(metin) {
+  const satirlar = guvenli(metin).split("\n");
+  let html = "", kodda = false, kod = [], liste = null;
+
+  const listeyiKapat = () => { if (liste) { html += `</${liste}>`; liste = null; } };
+  const satirIci = (s) => s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  for (const satir of satirlar) {
+    if (satir.startsWith("```")) {
+      if (kodda) { html += `<pre><code>${kod.join("\n")}</code></pre>`; kod = []; }
+      else listeyiKapat();
+      kodda = !kodda;
+      continue;
+    }
+    if (kodda) { kod.push(satir); continue; }
+
+    if (satir.startsWith("### ")) { listeyiKapat(); html += `<h5>${satirIci(satir.slice(4))}</h5>`; }
+    else if (satir.startsWith("## ")) { listeyiKapat(); html += `<h4>${satirIci(satir.slice(3))}</h4>`; }
+    else if (/^- /.test(satir)) {
+      if (liste !== "ul") { listeyiKapat(); html += "<ul>"; liste = "ul"; }
+      html += `<li>${satirIci(satir.slice(2))}</li>`;
+    }
+    else if (/^\d+\. /.test(satir)) {
+      if (liste !== "ol") { listeyiKapat(); html += "<ol>"; liste = "ol"; }
+      html += `<li>${satirIci(satir.replace(/^\d+\. /, ""))}</li>`;
+    }
+    else if (satir.trim() === "") listeyiKapat();
+    else { listeyiKapat(); html += `<p>${satirIci(satir)}</p>`; }
+  }
+  listeyiKapat();
+  return html;
 }
 
 // --- Sekmeler ----------------------------------------------------------------
@@ -38,6 +77,8 @@ document.querySelectorAll(".sekme").forEach((dugme) => {
 
     if (dugme.dataset.sekme === "alanlar") alanlariYukle();
     if (dugme.dataset.sekme === "sozluk") sozlukAra("");
+    if (dugme.dataset.sekme === "projeler") projeleriYukle();
+    if (dugme.dataset.sekme === "veritabani") veritabaniniYukle();
   });
 });
 
@@ -53,6 +94,20 @@ function konuKartiHtml(konu) {
       </div>
       <h2>${guvenli(konu.baslik)}</h2>
       <p>${guvenli(konu.ozet)}</p>
+
+      ${konu.dersNotu ? `
+        <details class="ders-notu" open>
+          <summary>📘 Ders Notu</summary>
+          ${markdown(konu.dersNotu)}
+        </details>` : ""}
+
+      ${konu.kaynaklar.length ? `
+        <h3>🔗 Kaynaklar (detaylı okuma)</h3>
+        ${konu.kaynaklar.map((k) => `
+          <div class="kaynak">
+            <span class="site">${guvenli(k.site)}</span>
+            <a href="${guvenli(k.url)}" target="_blank" rel="noopener">${guvenli(k.baslik)}</a>
+          </div>`).join("")}` : ""}
 
       <h3>📖 Terimler</h3>
       ${konu.terimler.map((t) => `
@@ -201,6 +256,128 @@ async function sozlukAra(kelime) {
           <div class="terim-kaynak">${guvenli(t.alanAdi)} → ${guvenli(t.konuBaslik)}</div>
         </div>`).join("")}
     </div>`);
+}
+
+// --- 🧪 Projeler -------------------------------------------------------------
+async function projeleriYukle() {
+  const projeler = await api("/api/projeler");
+  const liste = document.getElementById("projeListesi");
+  liste.innerHTML = projeler.map((p) => {
+    const yuzde = p.adimSayisi === 0 ? 0 : Math.floor(p.tamamlananAdimSayisi * 100 / p.adimSayisi);
+    return `
+      <div class="kart">
+        <div class="meta">
+          <span class="rozet">${guvenli(p.alanAdi)}</span>
+          <span class="rozet">${guvenli(p.zorluk)}</span>
+          ${yuzde === 100 ? '<span class="rozet tamam">✓ Tamamlandı</span>' : ""}
+        </div>
+        <h2>${guvenli(p.baslik)}</h2>
+        <p>${guvenli(p.aciklama)}</p>
+        <div class="cubuk"><div class="dolgu" style="width:${yuzde}%"></div></div>
+        <div class="meta">${p.tamamlananAdimSayisi} / ${p.adimSayisi} adım · %${yuzde}</div>
+        <h3>Adımlar</h3>
+        ${p.adimlar.map((a) => `
+          <label class="adim ${a.tamamlandi ? "bitti" : ""}">
+            <input type="checkbox" data-adim="${a.id}" ${a.tamamlandi ? "checked" : ""}>
+            <div>
+              <div class="adim-metin"><strong>${a.sira}.</strong> ${guvenli(a.aciklama)}</div>
+              ${a.ipucu ? `<div class="ipucu">💡 ${guvenli(a.ipucu)}</div>` : ""}
+            </div>
+          </label>`).join("")}
+        <div class="api-etiket" style="margin-top:8px">PATCH /api/projeler/adimlar/{id}</div>
+      </div>`;
+  }).join("");
+
+  liste.querySelectorAll("[data-adim]").forEach((kutu) =>
+    kutu.addEventListener("change", async () => {
+      await api(`/api/projeler/adimlar/${kutu.dataset.adim}`, {
+        method: "PATCH",
+        body: JSON.stringify({ tamamlandi: kutu.checked }),
+      });
+      await projeleriYukle();   // ilerleme çubuğunu güncellemek için listeyi yeniden çiz
+    }));
+}
+
+// --- 🗄️ Veritabanı -----------------------------------------------------------
+async function veritabaniniYukle() {
+  const d = await api("/api/veritabani/durum");
+  const kutu = document.getElementById("dbDurum");
+  const renk = d.bagli ? "var(--basari)" : "#d9534f";
+
+  kutu.innerHTML = `
+    <div class="kart">
+      <h2><span class="durum-nokta" style="background:${renk}"></span>${d.bagli ? "Bağlantı kuruldu" : "Bağlantı yok"}</h2>
+      <dl class="bilgi-izgara">
+        <dt>Sağlayıcı</dt><dd>${guvenli(d.saglayici)}</dd>
+        <dt>Sunucu</dt><dd><code>${guvenli(d.sunucu)}</code></dd>
+        <dt>Veritabanı</dt><dd><code>${guvenli(d.veritabani)}</code></dd>
+        <dt>Sürüm</dt><dd>${guvenli(d.sqlServerSurumu ?? "-")}</dd>
+        <dt>Migration'lar</dt><dd>${d.uygulananMigrationlar.map((m) => `<code>${guvenli(m)}</code>`).join("<br>") || "-"}</dd>
+      </dl>
+      ${d.hata ? `<div class="hata">⚠️ ${guvenli(d.hata)}</div>` : ""}
+      <p class="meta" style="margin-top:12px">Bu bilgiler <code>appsettings.Development.json</code> içindeki connection string'den gelir. Şifre gibi gizli kısımlar asla ekrana basılmaz.</p>
+    </div>
+
+    ${d.tablolar.length ? `
+    <div class="kart">
+      <h2>📋 Tablolar</h2>
+      <p class="meta">Bir tabloya tıkla: sütunları, tipleri, birincil anahtarı (🔑) ve bağlı olduğu tabloyu (🔗) gör.</p>
+      ${d.tablolar.map((t) => `
+        <details class="tablo-detay">
+          <summary><strong>${guvenli(t.ad)}</strong> <span class="meta">· ${t.kayitSayisi} kayıt · ${t.sutunlar.length} sütun</span></summary>
+          <div class="tablo-kutu">
+            <table>
+              <tr><th>Sütun</th><th>Tip</th><th>NULL olabilir</th><th>Anahtar</th></tr>
+              ${t.sutunlar.map((s) => `
+                <tr>
+                  <td>${s.birincilAnahtar ? "🔑 " : ""}${guvenli(s.ad)}</td>
+                  <td><code>${guvenli(s.tip)}</code></td>
+                  <td>${s.bosOlabilir ? "Evet" : "Hayır"}</td>
+                  <td>${s.birincilAnahtar ? "Primary Key" : s.bagliTablo ? `🔗 Foreign Key → ${guvenli(s.bagliTablo)}` : ""}</td>
+                </tr>`).join("")}
+            </table>
+          </div>
+        </details>`).join("")}
+    </div>` : ""}`;
+}
+
+const ORNEK_SORGULAR = {
+  "Tüm alanlar": "SELECT * FROM Alanlar ORDER BY Sira",
+  "Alan başına konu": "SELECT a.Ad, COUNT(*) AS KonuSayisi\nFROM Alanlar a\nJOIN Konular k ON k.AlanId = a.Id\nGROUP BY a.Ad",
+  "Tamamlanan konular": "SELECT a.Ad AS Alan, k.Baslik, k.TamamlanmaTarihi\nFROM Konular k\nJOIN Alanlar a ON a.Id = k.AlanId\nWHERE k.TamamlanmaTarihi IS NOT NULL\nORDER BY k.TamamlanmaTarihi",
+  "Terim ara (LIKE)": "SELECT t.Ad, t.Tanim, k.Baslik AS Konu\nFROM Terimler t\nJOIN Konular k ON k.Id = t.KonuId\nWHERE t.Ad LIKE '%Key%'",
+  "Kaynağı olmayan konular": "SELECT k.Id, k.Baslik\nFROM Konular k\nLEFT JOIN Kaynaklar x ON x.KonuId = k.Id\nWHERE x.Id IS NULL",
+  "En uzun konular (TOP)": "SELECT TOP 5 Baslik, TahminiDakika\nFROM Konular\nORDER BY TahminiDakika DESC",
+  "Proje ilerlemesi": "SELECT p.Baslik,\n       COUNT(*) AS AdimSayisi,\n       SUM(CASE WHEN a.Tamamlandi = 1 THEN 1 ELSE 0 END) AS Tamamlanan\nFROM Projeler p\nJOIN ProjeAdimlari a ON a.ProjeId = p.Id\nGROUP BY p.Baslik",
+};
+
+const ornekKutu = document.getElementById("ornekSorgular");
+for (const [ad, sql] of Object.entries(ORNEK_SORGULAR)) {
+  const b = document.createElement("button");
+  b.textContent = ad;
+  b.addEventListener("click", () => { document.getElementById("sqlKutusu").value = sql; sorguyuCalistir(); });
+  ornekKutu.appendChild(b);
+}
+
+document.getElementById("sorguCalistir").addEventListener("click", sorguyuCalistir);
+
+async function sorguyuCalistir() {
+  const sonuc = document.getElementById("sorguSonuc");
+  const sql = document.getElementById("sqlKutusu").value;
+  sonuc.innerHTML = '<p class="meta">Çalışıyor…</p>';
+  try {
+    const s = await api("/api/veritabani/sorgu", { method: "POST", body: JSON.stringify({ sql }) });
+    sonuc.innerHTML = `
+      <p class="meta">${s.satirSayisi} satır · ${s.sureMs} ms${s.kesildi ? " · ilk 200 satır gösteriliyor" : ""}</p>
+      <div class="tablo-kutu">
+        <table>
+          <tr>${s.sutunlar.map((c) => `<th>${guvenli(c)}</th>`).join("")}</tr>
+          ${s.satirlar.map((r) => `<tr>${r.map((v) => v === null ? '<td class="null">NULL</td>' : `<td>${guvenli(v)}</td>`).join("")}</tr>`).join("")}
+        </table>
+      </div>`;
+  } catch (e) {
+    sonuc.innerHTML = `<div class="hata">⚠️ ${guvenli(e.message)}</div>`;
+  }
 }
 
 // --- Başlangıç: sayfa açılınca bugünü yükle ---------------------------------

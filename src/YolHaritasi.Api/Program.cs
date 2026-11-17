@@ -45,6 +45,9 @@ builder.Services.AddDbContext<UygulamaDbContext>(options =>
 // Scoped: Her istek için bir tane (çünkü içinde Scoped olan DbContext kullanıyor).
 builder.Services.AddScoped<IIlerlemeServisi, IlerlemeServisi>();
 
+// Interface'siz kayıt da mümkün: "Biri VeritabaniServisi isterse yenisini ver."
+builder.Services.AddScoped<VeritabaniServisi>();
+
 var app = builder.Build();
 
 // ---------------------------------------------------------------------------

@@ -17,7 +17,7 @@
   <header class="ust">
     <div>
       <h1>🗺️ Yol Haritası</h1>
-      <p class="alt-baslik">Backend · SQL · Sunucu · Yapay Zeka</p>
+      <p class="alt-baslik">C# · Backend · SQL · Sunucu · Yapay Zeka</p>
     </div>
     <div class="genel-ilerleme">
       <span id="genelYuzde">%0</span>
@@ -29,7 +29,9 @@
   <nav class="sekmeler">
     <button class="sekme aktif" data-sekme="bugun">📅 Bugün</button>
     <button class="sekme" data-sekme="alanlar">🧭 Alanlar</button>
+    <button class="sekme" data-sekme="projeler">🧪 Projeler</button>
     <button class="sekme" data-sekme="sozluk">📖 Sözlük</button>
+    <button class="sekme" data-sekme="veritabani">🗄️ Veritabanı</button>
   </nav>
 
   <main>
@@ -46,11 +48,36 @@
       <div id="alanDetay"></div>
     </section>
 
+    <!-- PROJELER -->
+    <section id="projeler" class="panel">
+      <div class="api-etiket">GET /api/projeler</div>
+      <p class="meta">Her alanda öğrendiklerini uygulayacağın projeler. Adımları sırayla yap ve işaretle.</p>
+      <div id="projeListesi"></div>
+    </section>
+
     <!-- SÖZLÜK -->
     <section id="sozluk" class="panel">
       <div class="api-etiket">GET /api/terimler?ara=…</div>
       <input id="aramaKutusu" type="search" placeholder="Terim ara… (örn: key, SQL, token)">
       <div id="sozlukSonuc"></div>
+    </section>
+    <!-- VERİTABANI -->
+    <section id="veritabani" class="panel">
+      <div class="api-etiket">GET /api/veritabani/durum</div>
+      <div id="dbDurum">Yükleniyor…</div>
+
+      <div class="kart">
+        <h2>🧮 SQL Pratik Alanı</h2>
+        <p class="meta">Uygulamanın kendi veritabanında SELECT sorguları çalıştır. Sadece okuma yapılabilir; veriyi değiştiren komutlar engellenir.</p>
+        <div class="ornek-sorgular" id="ornekSorgular"></div>
+        <textarea id="sqlKutusu" rows="5" spellcheck="false">SELECT a.Ad, COUNT(*) AS KonuSayisi
+FROM Alanlar a
+JOIN Konular k ON k.AlanId = a.Id
+GROUP BY a.Ad</textarea>
+        <button class="dugme" id="sorguCalistir">▶ Çalıştır</button>
+        <span class="api-etiket" style="margin-left:8px">POST /api/veritabani/sorgu</span>
+        <div id="sorguSonuc"></div>
+      </div>
     </section>
   </main>
 

@@ -4,24 +4,60 @@ using YolHaritasi.Api.Entities;
 namespace YolHaritasi.Api.Data;
 
 /// <summary>
-/// SEED DATA (tohum / başlangıç verisi): Veritabanı ilk oluşturulduğunda içine konan hazır veri.
-/// Uygulama açılırken çağrılır; Alanlar tablosu BOŞSA yol haritasının tamamını ekler,
-/// doluysa hiçbir şey yapmaz. Bu sayede uygulamayı her açtığında veri tekrar tekrar eklenmez
-/// (bu özelliğe IDEMPOTENT denir: kaç kez çalışırsa çalışsın sonuç aynı).
+/// SEED DATA (tohum / başlangıç verisi): Veritabanına konan hazır içerik.
+/// Uygulama her açıldığında çalışır ama sadece EKSİK olanı ekler:
+///   1) Veritabanında olmayan alanları (konuları, terimleri, görevleriyle) ekler
+///   2) Ders notu boş olan konulara ders notunu yazar
+///   3) Hiç kaynağı olmayan konulara kaynak linklerini ekler
+///   4) Hiç projesi olmayan alanlara projelerini ekler
+/// Var olan veriye ve senin ilerlemene (tamamlanan konular, işaretlenen görevler) dokunmaz.
+/// Kaç kez çalışırsa çalışsın sonuç aynıdır; bu özelliğe IDEMPOTENT denir.
+///
+/// Dosya "partial": İçerik büyük olduğu için BaslangicVerisi.*.cs dosyalarına bölündü.
 /// </summary>
-public static class BaslangicVerisi
+public static partial class BaslangicVerisi
 {
     public static async Task EkleAsync(UygulamaDbContext db)
     {
-        // AnyAsync → SQL: SELECT CASE WHEN EXISTS (SELECT 1 FROM Alanlar) ...
-        if (await db.Alanlar.AnyAsync())
-            return;
+        // ---- 1) Eksik alanlar ----
+        // Veritabanındaki alan adlarını çek → SQL: SELECT Ad FROM Alanlar
+        var mevcutAlanlar = await db.Alanlar.Select(a => a.Ad).ToListAsync();
 
-        db.Alanlar.AddRange(Backend(), Sql(), Sunucu(), YapayZeka());
+        Alan[] tumAlanlar = [CSharpTemelleri(), Backend(), Sql(), Sunucu(), YapayZeka()];
+        foreach (var alan in tumAlanlar.Where(a => !mevcutAlanlar.Contains(a.Ad)))
+            db.Alanlar.Add(alan);
 
         // Bu satıra kadar veritabanına HİÇBİR ŞEY gitmedi; nesneler sadece bellekte "eklenecek" diye işaretlendi.
-        // SaveChangesAsync tüm INSERT'leri tek bir TRANSACTION içinde gönderir:
-        // ya hepsi kaydedilir ya hiçbiri.
+        // SaveChangesAsync tüm INSERT'leri tek bir TRANSACTION içinde gönderir: ya hepsi kaydedilir ya hiçbiri.
+        await db.SaveChangesAsync();
+
+        // ---- 2) ve 3) Ders notları ve kaynaklar ----
+        // Include: İlişkili tabloyu da aynı sorguda getir (SQL'de JOIN). Kaynak sayısına bakacağımız için gerekli.
+        var konular = await db.Konular
+            .Include(k => k.Alan)
+            .Include(k => k.Kaynaklar)
+            .ToListAsync();
+
+        foreach (var konu in konular)
+        {
+            var anahtar = (konu.Alan.Ad, konu.Sira);
+
+            if (konu.DersNotu is null && DersNotlari.TryGetValue(anahtar, out var not))
+                konu.DersNotu = not;   // EF Core bu değişikliği takip ediyor → UPDATE üretecek
+
+            if (konu.Kaynaklar.Count == 0)
+                konu.Kaynaklar.AddRange(KaynaklariOlustur(konu.Alan.Ad, konu.Sira));   // → INSERT
+        }
+
+        // ---- 4) Projeler ----
+        var alanlar = await db.Alanlar.Include(a => a.Projeler).ToListAsync();
+        foreach (var alan in alanlar.Where(a => a.Projeler.Count == 0))
+        {
+            if (ProjeListesi.TryGetValue(alan.Ad, out var projeler))
+                alan.Projeler.AddRange(projeler);
+        }
+
+        // Değişiklik yoksa SaveChanges veritabanına hiçbir komut göndermez.
         await db.SaveChangesAsync();
     }
 

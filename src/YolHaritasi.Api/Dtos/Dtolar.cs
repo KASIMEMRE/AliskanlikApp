@@ -38,6 +38,8 @@ public record TerimDto(int Id, string Ad, string Tanim, string? Ornek);
 
 public record GorevDto(int Id, int Sira, string Aciklama, bool Tamamlandi);
 
+public record KaynakDto(string Baslik, string Url, string Site);
+
 public record KonuDetayDto(
     int Id,
     string AlanAdi,
@@ -46,8 +48,10 @@ public record KonuDetayDto(
     string Ozet,
     int TahminiDakika,
     DateTime? TamamlanmaTarihi,
+    string? DersNotu,
     List<TerimDto> Terimler,
-    List<GorevDto> Gorevler);
+    List<GorevDto> Gorevler,
+    List<KaynakDto> Kaynaklar);
 
 /// <summary>Sözlük araması sonucu: terim + hangi konuya ait olduğu.</summary>
 public record TerimAramaDto(int Id, string Ad, string Tanim, string? Ornek, int KonuId, string KonuBaslik, string AlanAdi);
@@ -60,3 +64,40 @@ public record BugunDto(
     string Mesaj,
     int GenelYuzdeIlerleme,
     KonuDetayDto? Konu);
+
+// ---- Projeler ----
+public record ProjeAdimiDto(int Id, int Sira, string Aciklama, string? Ipucu, bool Tamamlandi);
+
+public record ProjeDto(
+    int Id,
+    string AlanAdi,
+    string Baslik,
+    string Aciklama,
+    string Zorluk,
+    int AdimSayisi,
+    int TamamlananAdimSayisi,
+    List<ProjeAdimiDto> Adimlar);
+
+// ---- Veritabanı ekranı ----
+public record SutunDto(string Ad, string Tip, bool BosOlabilir, bool BirincilAnahtar, string? BagliTablo);
+
+public record TabloDto(string Ad, long KayitSayisi, List<SutunDto> Sutunlar);
+
+public record VeritabaniDurumDto(
+    bool Bagli,
+    string Saglayici,
+    string Sunucu,
+    string Veritabani,
+    string? SqlServerSurumu,
+    List<string> UygulananMigrationlar,
+    List<TabloDto> Tablolar,
+    string? Hata);
+
+public record SorguIstegi(string Sql);
+
+public record SorguSonucuDto(
+    List<string> Sutunlar,
+    List<List<string?>> Satirlar,
+    int SatirSayisi,
+    bool Kesildi,
+    long SureMs);
