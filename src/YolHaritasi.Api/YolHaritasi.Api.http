@@ -1,0 +1,33 @@
+# Visual Studio veya VS Code (REST Client eklentisi) ile bu dosyadaki isteklere
+# "Send Request" diyerek API'yi deneyebilirsin. ### işaretleri istekleri birbirinden ayırır.
+
+@api = http://localhost:5019
+
+### Bugün ne yapmalıyım?
+GET {{api}}/api/bugun
+
+### Tüm alanlar ve ilerleme yüzdeleri
+GET {{api}}/api/alanlar
+
+### SQL alanının konuları
+GET {{api}}/api/alanlar/2
+
+### Bir konunun detayı (terimler + görevler)
+GET {{api}}/api/konular/1
+
+### Konuyu tamamla (204 No Content dönmeli)
+POST {{api}}/api/konular/1/tamamla
+
+### Olmayan konu (404 dönmeli)
+POST {{api}}/api/konular/999/tamamla
+
+### Görevi tamamlandı işaretle (istek GÖVDESİ / body ile)
+PATCH {{api}}/api/gorevler/1
+Content-Type: application/json
+
+{
+  "tamamlandi": true
+}
+
+### Sözlükte ara
+GET {{api}}/api/terimler?ara=key
