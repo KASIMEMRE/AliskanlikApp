@@ -10,6 +10,7 @@ namespace YolHaritasi.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Tags("Konular")]   // API arayüzünde (Scalar) bu grubun başlığı
 public class KonularController(IIlerlemeServisi ilerleme) : ControllerBase
 {
     /// <summary>Konunun detayı: terimler ve görevler.</summary>
@@ -18,7 +19,7 @@ public class KonularController(IIlerlemeServisi ilerleme) : ControllerBase
     public async Task<ActionResult<KonuDetayDto>> Getir(int id)
     {
         var konu = await ilerleme.KonuDetayAsync(id);
-        return konu is null ? NotFound() : konu;
+        return konu is null ? NotFound(new HataDto($"{id} numaralı konu bulunamadı.")) : konu;
     }
 
     /// <summary>Konuyu tamamlandı olarak işaretler.</summary>
@@ -31,6 +32,6 @@ public class KonularController(IIlerlemeServisi ilerleme) : ControllerBase
         var bulundu = await ilerleme.KonuyuTamamlaAsync(id);
 
         // 204 No Content: "İşlem başarılı, sana gönderecek bir gövdem yok."
-        return bulundu ? NoContent() : NotFound();
+        return bulundu ? NoContent() : NotFound(new HataDto($"{id} numaralı konu bulunamadı."));
     }
 }

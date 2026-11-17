@@ -13,6 +13,7 @@ namespace YolHaritasi.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Tags("Alanlar")]   // API arayüzünde (Scalar) bu grubun başlığı
 public class AlanlarController(UygulamaDbContext db) : ControllerBase
 {
     /// <summary>Tüm alanlar ve her birindeki ilerleme yüzdesi.</summary>
@@ -61,6 +62,6 @@ public class AlanlarController(UygulamaDbContext db) : ControllerBase
             .FirstOrDefaultAsync();
 
         // ActionResult<T>: Ya T (→ 200 OK) ya da başka bir HTTP sonucu (404, 400...) dönebilir.
-        return alan is null ? NotFound() : alan;
+        return alan is null ? NotFound(new HataDto($"{id} numaralı alan bulunamadı.")) : alan;
     }
 }

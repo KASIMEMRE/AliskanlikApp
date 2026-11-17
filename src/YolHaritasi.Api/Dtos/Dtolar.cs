@@ -52,6 +52,9 @@ public record KonuDetayDto(
 /// <summary>Sözlük araması sonucu: terim + hangi konuya ait olduğu.</summary>
 public record TerimAramaDto(int Id, string Ad, string Tanim, string? Ornek, int KonuId, string KonuBaslik, string AlanAdi);
 
+/// <summary>Hata durumunda dönen Türkçe mesaj. Örn: { "mesaj": "5 numaralı konu bulunamadı." }</summary>
+public record HataDto(string Mesaj);
+
 /// <summary>"Bugün ne yapmalıyım?" cevabı.</summary>
 public record BugunDto(
     string Mesaj,

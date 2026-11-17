@@ -25,6 +25,7 @@ AliskanlikApp/
     ├── Services/
     │   └── IlerlemeServisi.cs   ← ⑥ İş kuralları
     ├── Controllers/             ← ⑦ HTTP isteklerini karşılayan sınıflar
+    ├── wwwroot/                 ← ⑧ Web arayüzü (HTML, CSS, JavaScript): API'yi kullanan istemci
     └── YolHaritasi.Api.http     ← API'yi denemek için hazır istekler
 ```
 
@@ -203,6 +204,9 @@ her istekte EF Core'un SQL Server'a gönderdiği **gerçek SQL'i** göreceksin (
 | **204 No Content** | Başarılı, ama cevap gövdesi yok |
 | **Safe method** | Veriyi değiştirmeyen metot (GET). Bu yüzden "tamamla" işlemi POST |
 | **PATCH vs PUT** | PATCH kısmi günceller, PUT kaynağın tamamını değiştirir |
+| **Static Files** | Sunucunun diskteki dosyaları (HTML, CSS, JS) olduğu gibi göndermesi. `UseStaticFiles()` |
+| **Frontend / fetch** | Tarayıcıda çalışan arayüz kodu / JavaScript'in HTTP istek fonksiyonu. `wwwroot/uygulama.js` |
+| **XSS** | Veritabanından gelen metnin sayfada kod olarak çalıştırılması saldırısı. `guvenli()` fonksiyonu bunu önler |
 | **UTC** | Saat diliminden bağımsız evrensel zaman. Sunucularda zaman hep UTC saklanır |
 | **LTS** | Long Term Support. .NET 10 LTS, 3 yıl destek alır. Sunucularda tercih edilir |
 
@@ -229,9 +233,18 @@ dotnet run
 ```
 İlk çalıştırmada `YolHaritasiDb` veritabanı **otomatik oluşturulur ve doldurulur**.
 
-Tarayıcıda **http://localhost:5019** adresini aç. **Scalar** arayüzü açılır: tüm endpoint'leri görüp
-"Test Request" ile deneyebilirsin. Ya da Visual Studio'da `YolHaritasi.Api.http` dosyasını açıp
-isteklerin yanındaki **Send Request**'e tıkla.
+Tarayıcıda **http://localhost:5019** adresini aç. Uygulamanın Türkçe ekranı açılır:
+- **📅 Bugün:** Sıradaki konun, terimleri ve görevleri. Görevleri işaretle, bitince "Konuyu tamamladım"a bas.
+- **🧭 Alanlar:** 4 alan ve ilerleme çubukları. Bir alana tıkla, konularını gör; bir konuya tıkla, detayını aç.
+- **📖 Sözlük:** Terim ara.
+
+Her bölümün üstündeki mavi etiket (`GET /api/bugun` gibi) o bölümün **hangi API'yi çağırdığını** gösterir.
+**F12 → Network** sekmesini açık tutarak ekranda bir şeye tıkla: tarayıcının API'ye gönderdiği isteği ve
+gelen JSON'u canlı göreceksin. Terminalde de aynı anda EF Core'un SQL Server'a gönderdiği SQL'i göreceksin.
+**Ekran → API → SQL Server** zincirinin tamamı gözünün önünde.
+
+API'yi doğrudan denemek için **http://localhost:5019/scalar** adresini aç (endpoint açıklamaları Türkçe).
+Ya da Visual Studio'da `YolHaritasi.Api.http` dosyasını açıp isteklerin yanındaki **Send Request**'e tıkla.
 
 ### SSMS ile veritabanına bak
 1. SSMS'i aç. Server name: `(localdb)\MSSQLLocalDB`, Authentication: **Windows Authentication**
@@ -253,7 +266,7 @@ isteklerin yanındaki **Send Request**'e tıkla.
    WHERE k.TamamlanmaTarihi IS NULL
    ORDER BY a.Sira, k.Sira;
    ```
-5. Scalar'dan `POST /api/konular/1/tamamla` gönder, sonra SSMS'te tekrar `SELECT * FROM Konular` çalıştır.
+5. Ekranda "Konuyu tamamladım"a bas (bu `POST /api/konular/1/tamamla` gönderir), sonra SSMS'te tekrar `SELECT * FROM Konular` çalıştır.
    `TamamlanmaTarihi` sütununun dolduğunu gör. **API → EF Core → SQL Server zincirini uçtan uca izlemiş oldun.**
 
 ### Sık karşılaşılan durumlar
@@ -261,6 +274,7 @@ isteklerin yanındaki **Send Request**'e tıkla.
 |---|---|
 | `Failed to determine the https port for redirect` uyarısı | `http` profilinde çalışıyorsun ve https adresi yok. Zararsız. `dotnet run --launch-profile https` ile kaybolur |
 | `A network-related or instance-specific error ... (localdb)` | LocalDB kurulu değil veya çalışmıyor. `sqllocaldb start MSSQLLocalDB` dene; olmazsa VS Installer'dan iş yükünü kontrol et |
+| Ekranda eski içerik görünüyor (güncellemeden sonra) | Başlangıç verisi sadece veritabanı **boşken** eklenir. Veritabanını silip yeniden oluştur (aşağıdaki satır) |
 | İlerlemeyi sıfırlamak istiyorum | SSMS'te: `UPDATE Konular SET TamamlanmaTarihi = NULL; UPDATE Gorevler SET Tamamlandi = 0;` |
 | Veritabanını tamamen silip baştan kurmak | `dotnet ef database drop` (proje klasöründe; önce bir kez `dotnet tool restore`) → sonra `dotnet run` |
 

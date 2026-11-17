@@ -51,8 +51,8 @@ public static class BaslangicVerisi
         [
             K(1, "İstemci, Sunucu ve HTTP", "Web'de iki programın nasıl konuştuğunu öğren: istek, cevap ve durum kodları.", 60,
             [
-                ("Client (İstemci)", "İsteği gönderen taraf: tarayıcı, mobil uygulama, curl.", "Tarayıcın localhost:5019/api/alanlar adresine istek atar."),
-                ("Server (Sunucu)", "İsteği karşılayıp cevap üreten program veya bilgisayar.", "dotnet run ile çalışan YolHaritasi.Api"),
+                ("Client", "İsteği gönderen taraf: tarayıcı, mobil uygulama, curl.", "Tarayıcın localhost:5019/api/alanlar adresine istek atar."),
+                ("Server", "İsteği karşılayıp cevap üreten program veya bilgisayar.", "dotnet run ile çalışan YolHaritasi.Api"),
                 ("HTTP", "İstemci ile sunucunun konuştuğu metin tabanlı protokol.", null),
                 ("Request / Response", "Her HTTP konuşması bir istek (metot, adres, başlıklar, gövde) ve bir cevaptan (durum kodu, başlıklar, gövde) oluşur.", null),
                 ("Status Code", "Cevabın sonucunu anlatan sayı. 2xx başarılı, 4xx istemci hatası, 5xx sunucu hatası.", "200 OK, 201 Created, 400 Bad Request, 404 Not Found, 500 Internal Server Error"),
@@ -63,12 +63,12 @@ public static class BaslangicVerisi
                 "Olmayan bir adrese istek atıp 404 cevabını gör.",
             ]),
 
-            K(2, "REST API ve Endpoint", "Kaynak (resource) mantığıyla API tasarımı ve HTTP metotları.", 90,
+            K(2, "REST API ve Uç Noktalar (Endpoint)", "Kaynak (resource) mantığıyla API tasarımı ve HTTP metotları.", 90,
             [
                 ("API", "Programların birbiriyle konuşması için sunulan arayüz; hangi adrese ne gönderilirse ne alınacağını tanımlar.", null),
                 ("REST", "Veriyi 'kaynak' olarak düşünüp URL'lerle adresleyen, HTTP metotlarıyla işlem yapan API tasarım stili.", "GET /api/konular/3 → 3 numaralı konuyu getir"),
                 ("Endpoint", "Bir route + HTTP metodu eşleşmesi. 'Bu adrese bu metotla gelinirse şu kod çalışır.'", "POST /api/konular/3/tamamla"),
-                ("HTTP Metotları", "GET = oku, POST = oluştur/işlem yap, PUT = tamamen güncelle, PATCH = kısmen güncelle, DELETE = sil.", null),
+                ("HTTP Methods", "GET = oku, POST = oluştur/işlem yap, PUT = tamamen güncelle, PATCH = kısmen güncelle, DELETE = sil.", null),
                 ("JSON", "Verinin metin olarak taşınma biçimi.", "{ \"id\": 1, \"ad\": \"Backend\" }"),
                 ("Serialization", "C# nesnesini JSON'a çevirme. Tersi deserialization.", null),
                 ("Query String", "URL'de ? işaretinden sonra gelen filtre parametreleri.", "/api/terimler?ara=key"),
@@ -78,7 +78,7 @@ public static class BaslangicVerisi
                 "Controllers klasöründeki her [HttpGet]/[HttpPost] satırının hangi URL'ye karşılık geldiğini çıkar.",
             ]),
 
-            K(3, "Dependency Injection", "Nesneleri kendimiz oluşturmak yerine framework'ün bize vermesi.", 90,
+            K(3, "Bağımlılık Enjeksiyonu (Dependency Injection)", "Nesneleri kendimiz oluşturmak yerine framework'ün bize vermesi.", 90,
             [
                 ("Dependency Injection (DI)", "Bir sınıfın ihtiyaç duyduğu nesneleri (bağımlılıkları) kendisi new'lemek yerine dışarıdan, genelde constructor üzerinden alması.", "IlerlemeServisi, UygulamaDbContext'i constructor'dan alır."),
                 ("Service Lifetime", "DI'ın bir nesneyi ne kadar yaşatacağı. Singleton: uygulama boyunca tek. Scoped: her HTTP isteği için bir tane. Transient: her istendiğinde yeni.", "DbContext Scoped'dır."),
@@ -88,7 +88,7 @@ public static class BaslangicVerisi
                 "Program.cs'te builder.Services.Add... satırlarını bul; her birinin ne kaydettiğini açıkla.",
             ]),
 
-            K(4, "Katmanlı Mimari ve DTO", "Controller, servis ve veri katmanlarını ayırmak; dışarıya entity değil DTO göndermek.", 90,
+            K(4, "Katmanlı Mimari ve Veri Aktarım Nesneleri (DTO)", "Controller, servis ve veri katmanlarını ayırmak; dışarıya entity değil DTO göndermek.", 90,
             [
                 ("Controller", "HTTP isteğini karşılayan, cevabı dönen ince katman. İş kuralı içermemeli.", null),
                 ("Service Layer", "İş kurallarının (business logic) yaşadığı katman.", "IlerlemeServisi: 'bugün ne çalışmalıyım' kararını verir."),
@@ -110,7 +110,7 @@ public static class BaslangicVerisi
                 "jwt.io sitesinde örnek bir token'ı çözüp içindeki bilgileri incele.",
             ]),
 
-            K(6, "Middleware, Loglama ve Hata Yönetimi", "İsteğin geçtiği boru hattı ve uygulamayı izlemek.", 90,
+            K(6, "Ara Katmanlar (Middleware), Loglama ve Hata Yönetimi", "İsteğin geçtiği boru hattı ve uygulamayı izlemek.", 90,
             [
                 ("Middleware", "Her isteğin sırayla geçtiği ara katmanlar. Loglama, hata yakalama, kimlik kontrolü gibi.", "app.UseHttpsRedirection()"),
                 ("Pipeline", "Middleware'lerin sıralı zinciri. Sıra önemlidir.", null),
@@ -134,12 +134,12 @@ public static class BaslangicVerisi
         [
             K(1, "İlişkisel Veritabanı Temelleri", "Tablo, satır, sütun ve anahtar kavramları.", 60,
             [
-                ("Tablo", "Aynı türden kayıtların tutulduğu yapı. Excel sayfasına benzer.", "Alanlar, Konular, Terimler, Gorevler"),
-                ("Satır / Sütun", "Satır (row) bir kayıttır, sütun (column) kaydın bir özelliğidir.", null),
+                ("Table", "Aynı türden kayıtların tutulduğu yapı. Excel sayfasına benzer.", "Alanlar, Konular, Terimler, Gorevler"),
+                ("Row / Column", "Satır (row) bir kayıttır, sütun (column) kaydın bir özelliğidir.", null),
                 ("Primary Key", "Her satırı benzersiz tanımlayan sütun.", "Konular.Id"),
                 ("Foreign Key", "Başka bir tablonun primary key'ine işaret eden sütun; tablolar arası ilişkiyi kurar.", "Konular.AlanId → Alanlar.Id"),
                 ("NULL", "'Değer yok' demek. 0 veya boş metin ile aynı şey değildir.", "Konular.TamamlanmaTarihi"),
-                ("Veri Tipi", "Sütunun ne tür veri tuttuğu.", "int, nvarchar(200), bit, datetime2"),
+                ("Data Type", "Sütunun ne tür veri tuttuğu.", "int, nvarchar(200), bit, datetime2"),
             ],
             [
                 "SSMS ile YolHaritasiDb veritabanına bağlan ve tabloları incele.",
@@ -159,10 +159,10 @@ public static class BaslangicVerisi
                 "Uygulamadan bir konuyu tamamla, sonra SSMS'te TamamlanmaTarihi sütununun dolduğunu gör.",
             ]),
 
-            K(3, "JOIN ve İlişki Türleri", "Birden fazla tabloyu birleştirerek sorgulamak.", 90,
+            K(3, "Tablo Birleştirme (JOIN) ve İlişki Türleri", "Birden fazla tabloyu birleştirerek sorgulamak.", 90,
             [
                 ("JOIN", "İki tabloyu ortak bir sütun üzerinden birleştirme.", "SELECT a.Ad, k.Baslik FROM Konular k JOIN Alanlar a ON a.Id = k.AlanId"),
-                ("INNER vs LEFT JOIN", "INNER sadece eşleşenleri, LEFT soldaki tablonun tamamını (eşleşmeyenlerde NULL) getirir.", null),
+                ("INNER JOIN / LEFT JOIN", "INNER sadece eşleşenleri, LEFT soldaki tablonun tamamını (eşleşmeyenlerde NULL) getirir.", null),
                 ("One-to-Many", "Bire çok ilişki: Bir alanın çok konusu var.", "Alan → Konular"),
                 ("Many-to-Many", "Çoka çok ilişki; araya bir bağlantı tablosu gerekir.", "Kullanıcılar ↔ Konular (ileride: KullaniciIlerleme tablosu)"),
                 ("GROUP BY / COUNT", "Gruplayıp saymak.", "SELECT AlanId, COUNT(*) FROM Konular GROUP BY AlanId"),
@@ -171,7 +171,7 @@ public static class BaslangicVerisi
                 "Her alan için toplam konu sayısını ve tamamlanan konu sayısını veren bir SQL yaz.",
             ]),
 
-            K(4, "Entity Framework Core ve Migration", "C# kodundan veritabanı yönetmek.", 120,
+            K(4, "Entity Framework Core ve Şema Geçişleri (Migration)", "C# kodundan veritabanı yönetmek.", 120,
             [
                 ("ORM", "Object-Relational Mapping: Nesneler ile tablolar arasında otomatik eşleme.", "EF Core, Dapper (mikro ORM)"),
                 ("DbContext", "EF Core'da veritabanı bağlantısını, tabloları ve değişiklik takibini yöneten sınıf.", "UygulamaDbContext"),
@@ -184,17 +184,17 @@ public static class BaslangicVerisi
                 "Loglarda EF Core'un ürettiği SQL sorgularını bul.",
             ]),
 
-            K(5, "Index ve Performans", "Sorguları hızlandırmak ve yavaşlığın nedenini bulmak.", 90,
+            K(5, "Dizinler (Index) ve Performans", "Sorguları hızlandırmak ve yavaşlığın nedenini bulmak.", 90,
             [
                 ("Index", "Kitabın arkasındaki dizin gibi; aramayı hızlandırır, yazmayı biraz yavaşlatır.", "IX_Terimler_Ad"),
                 ("Execution Plan", "SQL Server'ın bir sorguyu nasıl çalıştırdığının planı. Yavaş sorguları buradan teşhis ederiz.", "SSMS → Include Actual Execution Plan"),
-                ("N+1 Problemi", "Bir liste için 1 sorgu, sonra her eleman için ayrı birer sorgu atılması. Include veya projeksiyonla çözülür.", null),
+                ("N+1 Problem", "Bir liste için 1 sorgu, sonra her eleman için ayrı birer sorgu atılması. Include veya projeksiyonla çözülür.", null),
             ],
             [
                 "Terimler tablosunda Ad ile arama yapan bir sorgunun execution plan'ını incele.",
             ]),
 
-            K(6, "Transaction ve Tutarlılık", "Birden fazla işlemi tek bir bütün olarak yapmak.", 90,
+            K(6, "İşlem Bütünlüğü (Transaction) ve Tutarlılık", "Birden fazla işlemi tek bir bütün olarak yapmak.", 90,
             [
                 ("Transaction", "Ya hepsi ya hiçbiri prensibiyle çalışan işlem grubu.", "BEGIN TRAN ... COMMIT / ROLLBACK"),
                 ("ACID", "Atomicity, Consistency, Isolation, Durability: güvenilir transaction'ın dört özelliği.", null),
@@ -229,7 +229,7 @@ public static class BaslangicVerisi
                 "YolHaritasi.Api'yi publish edip IIS'te yeni site olarak yayınla.",
             ]),
 
-            K(2, "Application Pool ve Kimlikler", "Sitelerin hangi işlemde ve hangi hesapla çalıştığı.", 60,
+            K(2, "Uygulama Havuzu (Application Pool) ve Kimlikler", "Sitelerin hangi işlemde ve hangi hesapla çalıştığı.", 60,
             [
                 ("Application Pool", "Bir veya daha fazla sitenin çalıştığı yalıtılmış işlem (w3wp.exe).", null),
                 ("App Pool Identity", "Uygulamanın Windows'ta hangi kullanıcı hesabıyla çalıştığı. Dosya/veritabanı izinleri buna göre verilir.", "IIS AppPool\\YolHaritasi"),
@@ -239,18 +239,18 @@ public static class BaslangicVerisi
                 "App Pool identity'sine SQL Server'da yetki vermeden siteyi çalıştırıp hatayı gör, sonra yetkiyi verip düzelt.",
             ]),
 
-            K(3, "HTTPS, Sertifika ve Binding", "Güvenli bağlantı ve sitenin hangi adreste yayınlanacağı.", 60,
+            K(3, "HTTPS, Sertifika ve Site Bağlaması (Binding)", "Güvenli bağlantı ve sitenin hangi adreste yayınlanacağı.", 60,
             [
                 ("TLS / HTTPS", "Trafiği şifreleyen protokol; HTTPS = HTTP + TLS.", null),
-                ("Sertifika", "Sunucunun kimliğini kanıtlayan, güvenilir bir otorite tarafından imzalanmış dosya.", null),
+                ("Certificate", "Sunucunun kimliğini kanıtlayan, güvenilir bir otorite tarafından imzalanmış dosya.", null),
                 ("Binding", "IIS'te sitenin protokol + IP + port + host adı eşleşmesi.", "https *:443 yolharitasi.local"),
-                ("hosts dosyası", "Bilgisayarda alan adı → IP eşlemesi yapan dosya.", "C:\\Windows\\System32\\drivers\\etc\\hosts"),
+                ("hosts File", "Bilgisayarda alan adı → IP eşlemesi yapan dosya.", "C:\\Windows\\System32\\drivers\\etc\\hosts"),
             ],
             [
                 "hosts dosyasına yolharitasi.local ekle ve IIS'te bu adla binding oluştur.",
             ]),
 
-            K(4, "Worker Service ve Windows Service", "Arka planda sürekli çalışan programlar.", 90,
+            K(4, "Arka Plan Çalışanı ve Windows Hizmeti (Windows Service)", "Arka planda sürekli çalışan programlar.", 90,
             [
                 ("Windows Service", "Kullanıcı oturum açmasa bile arka planda çalışan Windows programı.", "services.msc"),
                 ("Worker Service", ".NET'in arka plan işi şablonu; BackgroundService sınıfından türetilir.", null),
@@ -260,7 +260,7 @@ public static class BaslangicVerisi
                 "Her sabah 'bugünün konusunu' hesaplayıp log'a yazan bir Worker Service'i Windows Service olarak kur.",
             ]),
 
-            K(5, "Registry", "Windows'un merkezi ayar veritabanı.", 60,
+            K(5, "Kayıt Defteri (Registry)", "Windows'un merkezi ayar veritabanı.", 60,
             [
                 ("Registry", "Windows ve uygulamaların ayarlarının tutulduğu hiyerarşik veritabanı.", "regedit"),
                 ("Hive", "Registry'nin ana kökleri.", "HKEY_LOCAL_MACHINE (HKLM), HKEY_CURRENT_USER (HKCU)"),
@@ -270,7 +270,7 @@ public static class BaslangicVerisi
                 "regedit ile HKCU\\Software altına bir test anahtarı oluştur ve C# ile oku.",
             ]),
 
-            K(6, "Event Viewer, PowerShell ve İzleme", "Sunucuda olanı görmek ve otomatikleştirmek.", 60,
+            K(6, "Olay Görüntüleyici, PowerShell ve İzleme", "Sunucuda olanı görmek ve otomatikleştirmek.", 60,
             [
                 ("Event Viewer", "Windows olay günlüklerini gösteren araç. IIS ve servis hataları buraya düşer.", "eventvwr.msc"),
                 ("PowerShell", "Windows'un betik (script) ve otomasyon kabuğu.", "Get-Service, Restart-WebAppPool"),
@@ -292,7 +292,7 @@ public static class BaslangicVerisi
         Aciklama = "LLM'leri .NET backend'ine entegre etmek.",
         Konular =
         [
-            K(1, "LLM Temelleri", "Büyük dil modelleri nasıl çalışır, neyi iyi yapar, neyi yapamaz.", 60,
+            K(1, "Büyük Dil Modeli (LLM) Temelleri", "Büyük dil modelleri nasıl çalışır, neyi iyi yapar, neyi yapamaz.", 60,
             [
                 ("LLM", "Large Language Model: Büyük metin verisiyle eğitilmiş, metin üreten model.", "Claude, GPT"),
                 ("Token", "Modelin işlediği metin parçası (kelime veya kelime parçası). Ücretlendirme token'la yapılır.", null),
@@ -304,7 +304,7 @@ public static class BaslangicVerisi
                 "Bir LLM'e aynı soruyu farklı şekillerde sorup cevapların nasıl değiştiğini gözlemle.",
             ]),
 
-            K(2, ".NET'ten LLM Çağırmak", "Backend'den bir yapay zeka API'sine istek atmak.", 90,
+            K(2, ".NET'ten Dil Modeli (LLM) Çağırmak", "Backend'den bir yapay zeka API'sine istek atmak.", 90,
             [
                 ("API Key", "Bir servise erişim için gizli anahtar. Asla koda ve Git'e yazılmaz.", "User Secrets veya ortam değişkeni"),
                 ("Microsoft.Extensions.AI", ".NET'in farklı AI sağlayıcılarını tek arayüzle (IChatClient) kullanmayı sağlayan kütüphanesi.", null),
@@ -314,7 +314,7 @@ public static class BaslangicVerisi
                 "Uygulamaya 'bu terimi bana daha basit anlat' endpoint'i ekle (ileride birlikte yapacağız).",
             ]),
 
-            K(3, "Prompt Mühendisliği ve Yapılandırılmış Çıktı", "Modelden tutarlı ve işlenebilir cevap almak.", 90,
+            K(3, "İstem (Prompt) Mühendisliği ve Yapılandırılmış Çıktı", "Modelden tutarlı ve işlenebilir cevap almak.", 90,
             [
                 ("System Prompt", "Modelin rolünü ve kurallarını belirleyen talimat.", "'Sen sabırlı bir backend mentorusun.'"),
                 ("Structured Output", "Modelin cevabını belirli bir JSON şemasına uygun vermesi.", null),
@@ -324,7 +324,7 @@ public static class BaslangicVerisi
                 "AI'dan bir konu için 3 soruluk JSON formatında quiz üretmesini iste.",
             ]),
 
-            K(4, "Tool Calling ve Agent", "Modelin bizim fonksiyonlarımızı çağırması.", 120,
+            K(4, "Araç Çağırma (Tool Calling) ve Ajanlar", "Modelin bizim fonksiyonlarımızı çağırması.", 120,
             [
                 ("Tool Calling", "Modelin, tanımladığımız bir fonksiyonu (ör. 'konuyu tamamla') çağırmaya karar vermesi.", null),
                 ("Agent", "Hedefe ulaşmak için tool'ları döngü içinde kullanan yapay zeka sistemi.", null),
@@ -333,17 +333,17 @@ public static class BaslangicVerisi
                 "AI mentora 'bugünkü görevlerimi listele' tool'u ver.",
             ]),
 
-            K(5, "Embedding ve RAG", "Kendi verimizi yapay zekaya bağlamak.", 120,
+            K(5, "Anlam Vektörleri (Embedding) ve RAG", "Kendi verimizi yapay zekaya bağlamak.", 120,
             [
                 ("Embedding", "Metnin anlamını temsil eden sayı dizisi (vektör). Benzer anlamlı metinlerin vektörleri birbirine yakındır.", null),
-                ("Vektör Arama", "Anlamca en yakın kayıtları bulmak.", "SQL Server 2025 VECTOR tipi"),
+                ("Vector Search", "Anlamca en yakın kayıtları bulmak.", "SQL Server 2025 VECTOR tipi"),
                 ("RAG", "Retrieval-Augmented Generation: Önce ilgili veriyi bul, sonra prompt'a ekleyip modele cevaplat.", "Terim sözlüğümüzden ilgili terimleri bulup AI'a vermek"),
             ],
             [
                 "Terimler için embedding üretip 'anlamca benzer terimler' özelliği ekle.",
             ]),
 
-            K(6, "AI Güvenliği ve Maliyet", "Üretimde AI kullanırken dikkat edilecekler.", 60,
+            K(6, "Yapay Zeka Güvenliği ve Maliyet", "Üretimde AI kullanırken dikkat edilecekler.", 60,
             [
                 ("Prompt Injection", "Kullanıcı girdisinin, modelin talimatlarını ele geçirmeye çalışması.", null),
                 ("Rate Limit", "Belirli sürede yapılabilecek istek sınırı.", "429 Too Many Requests"),

@@ -21,7 +21,18 @@ builder.Services.AddControllers();
 
 // OpenAPI: API'mizin "kullanım kılavuzunu" (hangi endpoint'ler var, ne alır, ne döner)
 // otomatik üretir. /openapi/v1.json adresinden görülebilir.
-builder.Services.AddOpenApi();
+// DOCUMENT TRANSFORMER: Üretilen dokümanın başlığını ve açıklamasını Türkçe yapıyoruz.
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((dokuman, context, ct) =>
+    {
+        dokuman.Info.Title = "Yol Haritası API";
+        dokuman.Info.Description =
+            "Backend, SQL, Sunucu ve Yapay Zeka öğrenme yol haritası. " +
+            "Bugünün konusunu, terim sözlüğünü, görevleri ve ilerlemeni sunar.";
+        return Task.CompletedTask;
+    });
+});
 
 // VERİTABANI: DbContext'i DI sistemine kaydet.
 // CONNECTION STRING appsettings.json → "ConnectionStrings:Varsayilan" ayarından okunur.
@@ -59,14 +70,17 @@ if (app.Environment.IsDevelopment())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();               // GET /openapi/v1.json
-    app.MapScalarApiReference();    // GET /scalar → API'yi tarayıcıdan deneyebileceğin arayüz
+    app.MapScalarApiReference(o => o.WithTitle("Yol Haritası API"));   // GET /scalar → API'yi deneyebileceğin arayüz
 }
 
 app.UseHttpsRedirection();          // http ile gelen isteği https'e yönlendirir
 
-app.MapControllers();               // Controller'lardaki [Route]/[HttpGet] tanımlarını endpoint olarak bağla
+// ARAYÜZ: wwwroot klasöründeki dosyaları (HTML, CSS, JavaScript) tarayıcıya sunar.
+// UseDefaultFiles: Kök adrese (/) gelen isteği wwwroot/index.html'e çevirir.
+// UseStaticFiles: Dosyayı diskten okuyup gönderir. Sıra önemli: önce DefaultFiles, sonra StaticFiles.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-// Kök adrese gelen isteği API arayüzüne yönlendir (sadece kolaylık olsun diye).
-app.MapGet("/", () => Results.Redirect("/scalar"));
+app.MapControllers();               // Controller'lardaki [Route]/[HttpGet] tanımlarını endpoint olarak bağla
 
 app.Run();

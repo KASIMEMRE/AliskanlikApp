@@ -15,7 +15,7 @@ Bu repo iki şeydir:
 
 ## 🧱 Mimari (şu anki hali)
 ```
- 📱 İstemci (tarayıcı / Scalar / ileride mobil)
+ 📱 İstemci (wwwroot web arayüzü / Scalar / ileride mobil)
         │  HTTP + JSON
         ▼
  ┌─────────────────── YolHaritasi.Api (ASP.NET Core) ──────────────────┐
@@ -47,4 +47,5 @@ Kurulum ve detaylar: [docs/adim-01.md](docs/adim-01.md#️-bilgisayarında-çal�
 cd src/YolHaritasi.Api
 dotnet run
 ```
-Tarayıcıda **http://localhost:5019** → API arayüzü (Scalar) açılır.
+Tarayıcıda **http://localhost:5019** → Türkçe uygulama ekranı açılır (Bugün · Alanlar · Sözlük).
+API'yi doğrudan denemek için: **http://localhost:5019/scalar**

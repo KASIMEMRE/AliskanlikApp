@@ -1,0 +1,64 @@
+<!doctype html>
+<!--
+  ARAYÜZ (FRONTEND)
+  Bu sayfa tarayıcıda çalışır. Verileri kendisi üretmez; JavaScript ile bizim API'mize
+  HTTP istekleri gönderir (fetch) ve gelen JSON'u ekrana çizer.
+  Yani bu sayfa da tıpkı ileride yapacağımız mobil uygulama gibi bir İSTEMCİ (client).
+  Sayfayı ASP.NET Core sunuyor: Program.cs'teki UseDefaultFiles + UseStaticFiles satırları.
+-->
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yol Haritası</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body>
+  <header class="ust">
+    <div>
+      <h1>🗺️ Yol Haritası</h1>
+      <p class="alt-baslik">Backend · SQL · Sunucu · Yapay Zeka</p>
+    </div>
+    <div class="genel-ilerleme">
+      <span id="genelYuzde">%0</span>
+      <div class="cubuk"><div id="genelCubuk" class="dolgu"></div></div>
+      <small>genel ilerleme</small>
+    </div>
+  </header>
+
+  <nav class="sekmeler">
+    <button class="sekme aktif" data-sekme="bugun">📅 Bugün</button>
+    <button class="sekme" data-sekme="alanlar">🧭 Alanlar</button>
+    <button class="sekme" data-sekme="sozluk">📖 Sözlük</button>
+  </nav>
+
+  <main>
+    <!-- BUGÜN -->
+    <section id="bugun" class="panel aktif">
+      <div class="api-etiket">GET /api/bugun</div>
+      <div id="bugunIcerik">Yükleniyor…</div>
+    </section>
+
+    <!-- ALANLAR -->
+    <section id="alanlar" class="panel">
+      <div class="api-etiket">GET /api/alanlar</div>
+      <div id="alanListesi" class="alan-izgara"></div>
+      <div id="alanDetay"></div>
+    </section>
+
+    <!-- SÖZLÜK -->
+    <section id="sozluk" class="panel">
+      <div class="api-etiket">GET /api/terimler?ara=…</div>
+      <input id="aramaKutusu" type="search" placeholder="Terim ara… (örn: key, SQL, token)">
+      <div id="sozlukSonuc"></div>
+    </section>
+  </main>
+
+  <footer>
+    Bu ekran <code>wwwroot/</code> klasöründeki HTML/CSS/JavaScript ile çalışır ve verileri API'den alır.
+    API'yi doğrudan denemek için: <a href="/scalar">/scalar</a>
+  </footer>
+
+  <script src="uygulama.js"></script>
+</body>
+</html>

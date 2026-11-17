@@ -4,6 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Kodun üstündeki /// <summary> açıklamalarını bir XML dosyasına yazar.
+         OpenAPI bu dosyayı okuyup açıklamaları API arayüzünde (Scalar) Türkçe olarak gösterir. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 1591: "Açıklaması olmayan public üye" uyarısı. Her şeye açıklama yazmak zorunda değiliz. -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

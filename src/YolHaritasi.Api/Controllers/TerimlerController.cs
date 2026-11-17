@@ -8,6 +8,7 @@ namespace YolHaritasi.Api.Controllers;
 /// <summary>Terim sözlüğü.</summary>
 [ApiController]
 [Route("api/[controller]")]
+[Tags("Terim Sözlüğü")]   // API arayüzünde (Scalar) bu grubun başlığı
 public class TerimlerController(UygulamaDbContext db) : ControllerBase
 {
     /// <summary>Terim sözlüğünde arama. Kelime verilmezse tüm terimler alfabetik gelir.</summary>

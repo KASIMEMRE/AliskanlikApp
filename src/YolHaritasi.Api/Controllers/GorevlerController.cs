@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Services;
 
 namespace YolHaritasi.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Tags("Görevler")]   // API arayüzünde (Scalar) bu grubun başlığı
 public class GorevlerController(IIlerlemeServisi ilerleme) : ControllerBase
 {
     /// <summary>İsteğin GÖVDESİNDE (body) gelecek JSON'un şekli: { "tamamlandi": true }</summary>
@@ -18,6 +20,6 @@ public class GorevlerController(IIlerlemeServisi ilerleme) : ControllerBase
     public async Task<IActionResult> DurumDegistir(int id, [FromBody] GorevDurumIstegi istek)
     {
         var bulundu = await ilerleme.GorevDurumuDegistirAsync(id, istek.Tamamlandi);
-        return bulundu ? NoContent() : NotFound();
+        return bulundu ? NoContent() : NotFound(new HataDto($"{id} numaralı görev bulunamadı."));
     }
 }
