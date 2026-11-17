@@ -110,6 +110,16 @@ Tek bir kontrole güvenmemek, güvenlikte temel prensiptir (**defense in depth**
 Ders notları veritabanında **Markdown** olarak duruyor; `uygulama.js` içindeki `markdown()` fonksiyonu bunu HTML'e çeviriyor.
 Çevirmeden önce tüm metni `guvenli()` ile kaçırıyor, böylece veritabanından gelen metin asla kod olarak çalışamıyor (XSS koruması).
 
+## 6b. Arayüz sadeleştirildi
+İlk sürümde konu kartı her şeyi aynı anda gösteriyordu ve ne yapılacağı anlaşılmıyordu. Şimdi:
+- **Bugün** ekranı bir konuyu **5 adımlık rehber** olarak gösteriyor: Oku → Kaynaklar → Terimler → Görevler → Bitir.
+  Her adımın başında "👉 Şimdi: ..." açıklaması, altta **İleri / Geri** düğmeleri var. Kaldığın adım tarayıcıda hatırlanıyor.
+- Terimler **kart** şeklinde: Önce kendin hatırlamaya çalış, sonra tıklayıp tanıma bak.
+- Her sekmenin başında "bu sayfada ne var?" açıklaması var. İlk açılışta "Nasıl çalışılır?" kutusu çıkıyor.
+- `GET /api/...` etiketleri varsayılan olarak gizli. Sayfanın en altındaki **🔧 Geliştirici modu** ile açılıyor.
+
+Kod: `wwwroot/uygulama.js` içindeki `konuRehberi()` ve `adimIcerigi()` fonksiyonları.
+
 ## 7. Bu adımın terimleri
 
 | Terim | Anlamı | Bu projede |

@@ -22,13 +22,13 @@
     <div class="genel-ilerleme">
       <span id="genelYuzde">%0</span>
       <div class="cubuk"><div id="genelCubuk" class="dolgu"></div></div>
-      <small>genel ilerleme</small>
+      <small>tüm yol haritası</small>
     </div>
   </header>
 
   <nav class="sekmeler">
     <button class="sekme aktif" data-sekme="bugun">📅 Bugün</button>
-    <button class="sekme" data-sekme="alanlar">🧭 Alanlar</button>
+    <button class="sekme" data-sekme="alanlar">🗺️ Tüm Konular</button>
     <button class="sekme" data-sekme="projeler">🧪 Projeler</button>
     <button class="sekme" data-sekme="sozluk">📖 Sözlük</button>
     <button class="sekme" data-sekme="veritabani">🗄️ Veritabanı</button>
@@ -37,12 +37,24 @@
   <main>
     <!-- BUGÜN -->
     <section id="bugun" class="panel aktif">
+      <div id="hosgeldin" class="bilgi-kutusu" hidden>
+        <strong>👋 Nasıl çalışılır?</strong>
+        <ol>
+          <li><strong>Bugün</strong> sekmesi sana sıradaki konuyu verir. Başka bir şey düşünme, sadece onu çalış.</li>
+          <li>Konu 5 adımdan oluşur: <strong>Oku → Kaynaklar → Terimler → Görevler → Bitir</strong>. Alttaki <strong>İleri</strong> düğmesiyle ilerle.</li>
+          <li>Bitirince <strong>"Konuyu tamamladım"</strong>a bas. Yarın kaldığın yerden, bir sonraki konuyla devam edersin.</li>
+        </ol>
+        <p class="meta">Konuların dışında pratik yapmak istersen <strong>🧪 Projeler</strong> sekmesine bak.</p>
+        <button class="dugme ikincil kucuk" id="hosgeldinKapat">Anladım, bir daha gösterme</button>
+      </div>
+
       <div class="api-etiket">GET /api/bugun</div>
       <div id="bugunIcerik">Yükleniyor…</div>
     </section>
 
-    <!-- ALANLAR -->
+    <!-- TÜM KONULAR -->
     <section id="alanlar" class="panel">
+      <p class="sayfa-aciklama">Yol haritasının tamamı burada. Bir alana tıkla, konularını gör. İstediğin konuyu açıp çalışabilirsin, ama önerilen sıra <strong>Bugün</strong> sekmesindeki sıradır.</p>
       <div class="api-etiket">GET /api/alanlar</div>
       <div id="alanListesi" class="alan-izgara"></div>
       <div id="alanDetay"></div>
@@ -50,40 +62,43 @@
 
     <!-- PROJELER -->
     <section id="projeler" class="panel">
+      <p class="sayfa-aciklama">Konularda öğrendiklerini gerçek bir şey yaparak pekiştirdiğin projeler. Bir projeye tıkla, adımlarını sırayla bilgisayarında yap ve bitirdikçe işaretle. <strong>Önerim:</strong> Bir alanın konularının yarısını bitirince o alanın projesine başla.</p>
       <div class="api-etiket">GET /api/projeler</div>
-      <p class="meta">Her alanda öğrendiklerini uygulayacağın projeler. Adımları sırayla yap ve işaretle.</p>
       <div id="projeListesi"></div>
     </section>
 
     <!-- SÖZLÜK -->
     <section id="sozluk" class="panel">
+      <p class="sayfa-aciklama">Tüm konulardaki terimler tek yerde. Bir kelimeye takıldığında buradan ara.</p>
       <div class="api-etiket">GET /api/terimler?ara=…</div>
-      <input id="aramaKutusu" type="search" placeholder="Terim ara… (örn: key, SQL, token)">
+      <input id="aramaKutusu" type="search" placeholder="Terim ara… (örn: key, SQL, class)">
       <div id="sozlukSonuc"></div>
     </section>
+
     <!-- VERİTABANI -->
     <section id="veritabani" class="panel">
+      <p class="sayfa-aciklama">Bu uygulamanın verileri SQL Server'da duruyor. Burada bağlantıyı, tabloları görebilir ve <strong>SQL pratiği</strong> yapabilirsin. SQL konularına geldiğinde burayı çok kullanacaksın.</p>
       <div class="api-etiket">GET /api/veritabani/durum</div>
       <div id="dbDurum">Yükleniyor…</div>
 
       <div class="kart">
         <h2>🧮 SQL Pratik Alanı</h2>
-        <p class="meta">Uygulamanın kendi veritabanında SELECT sorguları çalıştır. Sadece okuma yapılabilir; veriyi değiştiren komutlar engellenir.</p>
+        <p class="meta">1) Aşağıdaki hazır örneklerden birine tıkla, sorgu çalışsın ve sonucu gör. 2) Sorguyu değiştirip tekrar <strong>Çalıştır</strong>. Sadece okuma (SELECT) yapılabilir; veriye zarar veremezsin.</p>
         <div class="ornek-sorgular" id="ornekSorgular"></div>
-        <textarea id="sqlKutusu" rows="5" spellcheck="false">SELECT a.Ad, COUNT(*) AS KonuSayisi
-FROM Alanlar a
-JOIN Konular k ON k.AlanId = a.Id
-GROUP BY a.Ad</textarea>
+        <textarea id="sqlKutusu" rows="5" spellcheck="false">SELECT * FROM Alanlar</textarea>
         <button class="dugme" id="sorguCalistir">▶ Çalıştır</button>
-        <span class="api-etiket" style="margin-left:8px">POST /api/veritabani/sorgu</span>
+        <span class="api-etiket">POST /api/veritabani/sorgu</span>
         <div id="sorguSonuc"></div>
       </div>
     </section>
   </main>
 
   <footer>
-    Bu ekran <code>wwwroot/</code> klasöründeki HTML/CSS/JavaScript ile çalışır ve verileri API'den alır.
-    API'yi doğrudan denemek için: <a href="/scalar">/scalar</a>
+    <label class="gelistirici-anahtar">
+      <input type="checkbox" id="gelistiriciModu">
+      🔧 Geliştirici modu: Her bölümün hangi API'yi çağırdığını göster
+    </label>
+    <p>API'yi doğrudan denemek için: <a href="/scalar">/scalar</a></p>
   </footer>
 
   <script src="uygulama.js"></script>

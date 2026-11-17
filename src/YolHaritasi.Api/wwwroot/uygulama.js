@@ -82,74 +82,158 @@ document.querySelectorAll(".sekme").forEach((dugme) => {
   });
 });
 
-// --- Konu kartı (Bugün ekranında ve alan detayında ortak kullanılır) --------
-function konuKartiHtml(konu) {
-  const tamam = konu.tamamlanmaTarihi !== null;
-  return `
-    <div class="kart">
-      <div class="meta">
-        <span class="rozet">${guvenli(konu.alanAdi)}</span>
-        <span class="rozet">⏱️ ~${konu.tahminiDakika} dk</span>
-        ${tamam ? '<span class="rozet tamam">✓ Tamamlandı</span>' : ""}
-      </div>
-      <h2>${guvenli(konu.baslik)}</h2>
-      <p>${guvenli(konu.ozet)}</p>
+// --- KONU REHBERİ -------------------------------------------------------------
+// Bir konuyu tek seferde değil, 5 adımda gösteriyoruz: Oku → Kaynaklar → Terimler → Görevler → Bitir.
+// Her adımda ekranda sadece o adımın içeriği ve "şimdi ne yapmalısın" açıklaması var.
+const ADIMLAR = [
+  { anahtar: "oku", ad: "Oku", ikon: "📘" },
+  { anahtar: "kaynak", ad: "Kaynaklar", ikon: "🔗" },
+  { anahtar: "terim", ad: "Terimler", ikon: "📖" },
+  { anahtar: "gorev", ad: "Görevler", ikon: "🛠️" },
+  { anahtar: "bitir", ad: "Bitir", ikon: "✅" },
+];
 
-      ${konu.dersNotu ? `
-        <details class="ders-notu" open>
-          <summary>📘 Ders Notu</summary>
-          ${markdown(konu.dersNotu)}
-        </details>` : ""}
-
-      ${konu.kaynaklar.length ? `
-        <h3>🔗 Kaynaklar (detaylı okuma)</h3>
-        ${konu.kaynaklar.map((k) => `
-          <div class="kaynak">
-            <span class="site">${guvenli(k.site)}</span>
-            <a href="${guvenli(k.url)}" target="_blank" rel="noopener">${guvenli(k.baslik)}</a>
-          </div>`).join("")}` : ""}
-
-      <h3>📖 Terimler</h3>
-      ${konu.terimler.map((t) => `
-        <div class="terim">
-          <div class="terim-ad">${guvenli(t.ad)}</div>
-          <div>${guvenli(t.tanim)}</div>
-          ${t.ornek ? `<div class="terim-ornek">${guvenli(t.ornek)}</div>` : ""}
-        </div>`).join("")}
-
-      <h3>🛠️ Görevler</h3>
-      ${konu.gorevler.map((g) => `
-        <label class="gorev ${g.tamamlandi ? "bitti" : ""}">
-          <input type="checkbox" data-gorev="${g.id}" ${g.tamamlandi ? "checked" : ""}>
-          <span>${guvenli(g.aciklama)}</span>
-        </label>`).join("")}
-
-      <button class="dugme" data-tamamla="${konu.id}" ${tamam ? "disabled" : ""}>
-        ${tamam ? "✓ Bu konu tamamlandı" : "Konuyu tamamladım"}
-      </button>
-      <div class="api-etiket" style="margin:12px 0 0 8px">POST /api/konular/${konu.id}/tamamla</div>
-    </div>`;
+// Hangi konuda hangi adımda kaldığını tarayıcıda hatırla (sayfayı yenileyince kaybolmasın).
+// localStorage bazı tarayıcı ayarlarında çalışmayabilir; bu yüzden try/catch içinde.
+function kayitliAdim(konuId) {
+  try { return Number(localStorage.getItem(`adim-${konuId}`)) || 0; } catch { return 0; }
+}
+function adimiKaydet(konuId, adim) {
+  try { localStorage.setItem(`adim-${konuId}`, adim); } catch { }
 }
 
-// Konu kartındaki görev kutuları ve "tamamladım" düğmesi için olay bağlama
-function konuKartiOlaylari(kapsayici, yenile) {
-  kapsayici.querySelectorAll("[data-gorev]").forEach((kutu) => {
-    kutu.addEventListener("change", async () => {
-      // PATCH /api/gorevler/{id}  gövde: { "tamamlandi": true/false }
-      await api(`/api/gorevler/${kutu.dataset.gorev}`, {
-        method: "PATCH",
-        body: JSON.stringify({ tamamlandi: kutu.checked }),
-      });
-      kutu.closest(".gorev").classList.toggle("bitti", kutu.checked);
-    });
-  });
+/**
+ * Konu rehberini verilen kutunun içine çizer.
+ * tamamlaninca: "Konuyu tamamladım"a basıldıktan sonra çağrılacak fonksiyon.
+ */
+function konuRehberi(kutu, konu, tamamlaninca) {
+  let adim = Math.min(kayitliAdim(konu.id), ADIMLAR.length - 1);
 
-  kapsayici.querySelectorAll("[data-tamamla]").forEach((dugme) => {
-    dugme.addEventListener("click", async () => {
-      await api(`/api/konular/${dugme.dataset.tamamla}/tamamla`, { method: "POST" });
-      await yenile();
+  function ciz() {
+    adimiKaydet(konu.id, adim);
+    const tamam = konu.tamamlanmaTarihi !== null;
+    const yapilanGorev = konu.gorevler.filter((g) => g.tamamlandi).length;
+
+    kutu.innerHTML = `
+      <div class="kart rehber">
+        <div class="meta">
+          <span class="rozet">${guvenli(konu.alanAdi)} · ${konu.sira}. konu</span>
+          <span class="rozet">⏱️ ~${konu.tahminiDakika} dk</span>
+          ${tamam ? '<span class="rozet tamam">✓ Tamamlandı</span>' : ""}
+        </div>
+        <h2>${guvenli(konu.baslik)}</h2>
+        <p class="meta">${guvenli(konu.ozet)}</p>
+
+        <ol class="adim-cubugu">
+          ${ADIMLAR.map((a, i) => `
+            <li class="${i === adim ? "simdi" : i < adim ? "gecti" : ""}">
+              <button data-git="${i}"><span>${i < adim ? "✓" : i + 1}</span>${a.ikon} ${a.ad}</button>
+            </li>`).join("")}
+        </ol>
+
+        <div class="adim-icerik">${adimIcerigi(ADIMLAR[adim].anahtar, konu, tamam, yapilanGorev)}</div>
+
+        <div class="rehber-alt">
+          <button class="dugme ikincil" data-onceki ${adim === 0 ? "disabled" : ""}>← Geri</button>
+          <span class="meta">Adım ${adim + 1} / ${ADIMLAR.length}</span>
+          ${adim < ADIMLAR.length - 1
+            ? `<button class="dugme" data-sonraki>İleri: ${ADIMLAR[adim + 1].ikon} ${ADIMLAR[adim + 1].ad} →</button>`
+            : `<span></span>`}
+        </div>
+      </div>`;
+
+    kutu.querySelectorAll("[data-git]").forEach((b) =>
+      b.addEventListener("click", () => { adim = Number(b.dataset.git); ciz(); ustaKaydir(); }));
+    kutu.querySelector("[data-onceki]")?.addEventListener("click", () => { adim--; ciz(); ustaKaydir(); });
+    kutu.querySelector("[data-sonraki]")?.addEventListener("click", () => { adim++; ciz(); ustaKaydir(); });
+
+    // Terim kartları: tıklayınca tanım açılır
+    kutu.querySelectorAll(".terim-kart").forEach((k) =>
+      k.addEventListener("click", () => k.classList.toggle("acik")));
+
+    // Görev kutuları: PATCH /api/gorevler/{id}
+    kutu.querySelectorAll("[data-gorev]").forEach((kutucuk) =>
+      kutucuk.addEventListener("change", async () => {
+        await api(`/api/gorevler/${kutucuk.dataset.gorev}`, {
+          method: "PATCH",
+          body: JSON.stringify({ tamamlandi: kutucuk.checked }),
+        });
+        konu.gorevler.find((g) => g.id === Number(kutucuk.dataset.gorev)).tamamlandi = kutucuk.checked;
+        ciz();
+      }));
+
+    // Konuyu tamamla: POST /api/konular/{id}/tamamla
+    kutu.querySelector("[data-tamamla]")?.addEventListener("click", async () => {
+      await api(`/api/konular/${konu.id}/tamamla`, { method: "POST" });
+      adimiKaydet(konu.id, 0);
+      await tamamlaninca();
     });
-  });
+  }
+
+  function ustaKaydir() {
+    kutu.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  ciz();
+}
+
+function adimIcerigi(anahtar, konu, tamam, yapilanGorev) {
+  switch (anahtar) {
+    case "oku":
+      return konu.dersNotu
+        ? `<p class="yapilacak">👉 <strong>Şimdi:</strong> Aşağıdaki ders notunu baştan sona oku. Kod örneklerini satır satır anlamaya çalış. Acele etme.</p>
+           <div class="ders-notu">${markdown(konu.dersNotu)}</div>`
+        : `<p class="yapilacak">👉 Bu konunun ders notu henüz yazılmadı. <strong>İleri</strong>'ye basıp kaynaklardan oku.</p>`;
+
+    case "kaynak":
+      return konu.kaynaklar.length
+        ? `<p class="yapilacak">👉 <strong>Şimdi:</strong> Bu sayfaları aç ve oku (yeni sekmede açılır). Ders notundaki konuları farklı örneklerle pekiştirirsin. W3Schools sayfalarındaki <em>"Try it Yourself"</em> düğmesiyle kodu tarayıcıda deneyebilirsin.</p>
+           <ul class="kaynak-listesi">
+             ${konu.kaynaklar.map((k) => `
+               <li><a href="${guvenli(k.url)}" target="_blank" rel="noopener">${guvenli(k.baslik)} ↗</a>
+                   <span class="site">${guvenli(k.site)}</span></li>`).join("")}
+           </ul>`
+        : `<p class="yapilacak">👉 Bu konu için ek kaynak yok. <strong>İleri</strong>'ye geç.</p>`;
+
+    case "terim":
+      return `<p class="yapilacak">👉 <strong>Şimdi:</strong> Her terimin adını oku ve anlamını <strong>önce kendin hatırlamaya çalış</strong>. Sonra karta tıklayıp tanıma bak.</p>
+        <div class="terim-izgara">
+          ${konu.terimler.map((t) => `
+            <div class="terim-kart">
+              <div class="terim-ad">${guvenli(t.ad)}</div>
+              <div class="terim-ipucu">Tanımı görmek için tıkla</div>
+              <div class="terim-arka">
+                <div>${guvenli(t.tanim)}</div>
+                ${t.ornek ? `<div class="terim-ornek">${guvenli(t.ornek)}</div>` : ""}
+              </div>
+            </div>`).join("")}
+        </div>`;
+
+    case "gorev":
+      return `<p class="yapilacak">👉 <strong>Şimdi:</strong> Bu görevleri <strong>kendi bilgisayarında</strong> yap. Her birini bitirince kutusunu işaretle.</p>
+        <div class="gorev-listesi">
+          ${konu.gorevler.map((g) => `
+            <label class="gorev ${g.tamamlandi ? "bitti" : ""}">
+              <input type="checkbox" data-gorev="${g.id}" ${g.tamamlandi ? "checked" : ""}>
+              <span>${guvenli(g.aciklama)}</span>
+            </label>`).join("")}
+        </div>
+        <p class="meta">${yapilanGorev} / ${konu.gorevler.length} görev yapıldı</p>
+        <div class="api-etiket">PATCH /api/gorevler/{id}</div>`;
+
+    case "bitir":
+      if (tamam)
+        return `<p class="yapilacak">✅ Bu konuyu zaten tamamladın. Sıradaki konu için <strong>📅 Bugün</strong> sekmesine dön.</p>`;
+      return `<p class="yapilacak">👉 <strong>Son adım.</strong> Kendine şunları sor:</p>
+        <ul class="kontrol-listesi">
+          <li>Ders notunu okudum ve kod örneklerini anladım.</li>
+          <li>Terimlerin çoğunu tanıma bakmadan açıklayabiliyorum.</li>
+          <li>Görevleri yaptım (${yapilanGorev} / ${konu.gorevler.length}).</li>
+        </ul>
+        <p>Hepsine "evet" diyorsan konuyu tamamla. Takıldığın yer varsa önce geri dönüp tekrar et.</p>
+        <button class="dugme buyuk" data-tamamla>✓ Konuyu tamamladım</button>
+        <div class="api-etiket">POST /api/konular/${konu.id}/tamamla</div>`;
+  }
 }
 
 // --- 📅 Bugün ---------------------------------------------------------------
@@ -163,9 +247,12 @@ async function bugunuYukle() {
       alan.innerHTML = `<div class="kart"><h2>${guvenli(bugun.mesaj)}</h2></div>`;
       return;
     }
-    alan.innerHTML = `<p class="meta">Sıradaki konun bu. Terimleri oku, görevleri yap, bitince "Konuyu tamamladım"a bas.</p>`
-      + konuKartiHtml(bugun.konu);
-    konuKartiOlaylari(alan, bugunuYukle);
+    alan.innerHTML = `<h2 class="bolum-baslik">Bugünün konusu</h2><div id="bugunRehber"></div>`;
+    konuRehberi(document.getElementById("bugunRehber"), bugun.konu, async () => {
+      await bugunuYukle();
+      document.getElementById("bugunIcerik").insertAdjacentHTML("afterbegin",
+        `<div class="bilgi-kutusu basari">🎉 Tebrikler, konuyu tamamladın! İşte sıradaki konun.</div>`);
+    });
   } catch (e) {
     alan.innerHTML = `<div class="kart">⚠️ ${guvenli(e.message)}</div>`;
   }
@@ -176,7 +263,7 @@ function genelIlerlemeyiGoster(yuzde) {
   document.getElementById("genelCubuk").style.width = `${yuzde}%`;
 }
 
-// --- 🧭 Alanlar -------------------------------------------------------------
+// --- 🗺️ Tüm Konular ------------------------------------------------------------
 let seciliAlanId = null;
 
 async function alanlariYukle() {
@@ -207,6 +294,7 @@ async function alanDetayiniGoster(id) {
     <div class="kart" style="margin-top:16px">
       <div class="api-etiket">GET /api/alanlar/${id}</div>
       <h2>${guvenli(alan.ad)}</h2>
+      <p class="meta">Bir konuya tıkla, aşağıda açılsın.</p>
       ${alan.konular.map((k) => `
         <div class="konu-satir" data-konu="${k.id}">
           <div>
@@ -225,10 +313,8 @@ async function alanDetayiniGoster(id) {
 async function konuDetayiniGoster(id) {
   const konu = await api(`/api/konular/${id}`);
   const kutu = document.getElementById("konuDetay");
-  kutu.innerHTML = `<div class="api-etiket">GET /api/konular/${id}</div>` + konuKartiHtml(konu);
-  konuKartiOlaylari(kutu, async () => {
+  konuRehberi(kutu, konu, async () => {
     await alanlariYukle();
-    await konuDetayiniGoster(id);
     await bugunuYukle();
   });
   kutu.scrollIntoView({ behavior: "smooth" });
@@ -259,6 +345,8 @@ async function sozlukAra(kelime) {
 }
 
 // --- 🧪 Projeler -------------------------------------------------------------
+const acikProjeler = new Set();   // yeniden çizince açık olan projeler kapanmasın
+
 async function projeleriYukle() {
   const projeler = await api("/api/projeler");
   const liste = document.getElementById("projeListesi");
@@ -275,7 +363,8 @@ async function projeleriYukle() {
         <p>${guvenli(p.aciklama)}</p>
         <div class="cubuk"><div class="dolgu" style="width:${yuzde}%"></div></div>
         <div class="meta">${p.tamamlananAdimSayisi} / ${p.adimSayisi} adım · %${yuzde}</div>
-        <h3>Adımlar</h3>
+        <details class="proje-adimlar" ${acikProjeler.has(p.id) ? "open" : ""} data-proje="${p.id}">
+        <summary>${p.tamamlananAdimSayisi === 0 ? "Projeye başla: adımları göster" : "Adımları göster"}</summary>
         ${p.adimlar.map((a) => `
           <label class="adim ${a.tamamlandi ? "bitti" : ""}">
             <input type="checkbox" data-adim="${a.id}" ${a.tamamlandi ? "checked" : ""}>
@@ -284,9 +373,13 @@ async function projeleriYukle() {
               ${a.ipucu ? `<div class="ipucu">💡 ${guvenli(a.ipucu)}</div>` : ""}
             </div>
           </label>`).join("")}
+        </details>
         <div class="api-etiket" style="margin-top:8px">PATCH /api/projeler/adimlar/{id}</div>
       </div>`;
   }).join("");
+
+  liste.querySelectorAll("[data-proje]").forEach((d) =>
+    d.addEventListener("toggle", () => d.open ? acikProjeler.add(Number(d.dataset.proje)) : acikProjeler.delete(Number(d.dataset.proje))));
 
   liste.querySelectorAll("[data-adim]").forEach((kutu) =>
     kutu.addEventListener("change", async () => {
@@ -379,6 +472,26 @@ async function sorguyuCalistir() {
     sonuc.innerHTML = `<div class="hata">⚠️ ${guvenli(e.message)}</div>`;
   }
 }
+
+// --- Hoş geldin kutusu ve geliştirici modu ------------------------------------
+function ayarOku(ad) { try { return localStorage.getItem(ad); } catch { return null; } }
+function ayarYaz(ad, deger) { try { localStorage.setItem(ad, deger); } catch { } }
+
+const hosgeldin = document.getElementById("hosgeldin");
+hosgeldin.hidden = ayarOku("hosgeldinKapali") === "1";
+document.getElementById("hosgeldinKapat").addEventListener("click", () => {
+  hosgeldin.hidden = true;
+  ayarYaz("hosgeldinKapali", "1");
+});
+
+// Geliştirici modu: Açıkken her bölümün çağırdığı API adresi (mavi etiketler) görünür.
+const gelistiriciKutu = document.getElementById("gelistiriciModu");
+gelistiriciKutu.checked = ayarOku("gelistiriciModu") === "1";
+document.body.classList.toggle("gelistirici", gelistiriciKutu.checked);
+gelistiriciKutu.addEventListener("change", () => {
+  document.body.classList.toggle("gelistirici", gelistiriciKutu.checked);
+  ayarYaz("gelistiriciModu", gelistiriciKutu.checked ? "1" : "0");
+});
 
 // --- Başlangıç: sayfa açılınca bugünü yükle ---------------------------------
 bugunuYukle();
