@@ -134,3 +134,41 @@ public record KullaniciDto(int Id, string Ad, string Email, string Rol);
 
 /// <summary>Giriş/kayıt cevabı: token + ne zaman geçersiz olacağı + kullanıcı bilgisi.</summary>
 public record OturumDto(string Token, DateTime BitisTarihi, KullaniciDto Kullanici);
+
+// ---- Notlar ve çalışma süresi (Adım 5) ----
+public record NotDto(int Id, int KonuId, string Icerik, DateTime OlusturmaTarihi, DateTime? GuncellemeTarihi);
+
+public record NotIstegi(
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Not boş olamaz.")]
+    [System.ComponentModel.DataAnnotations.StringLength(4000, ErrorMessage = "Not en fazla 4000 karakter olabilir.")]
+    string Icerik);
+
+public record CalismaDto(int Id, int KonuId, string KonuBaslik, DateTime Baslangic, int Dakika, string? Aciklama);
+
+public record CalismaIstegi(
+    [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue, ErrorMessage = "Geçerli bir konu seçin.")]
+    int KonuId,
+
+    [System.ComponentModel.DataAnnotations.Range(1, 600, ErrorMessage = "Süre 1 ile 600 dakika arasında olmalıdır.")]
+    int Dakika,
+
+    [System.ComponentModel.DataAnnotations.StringLength(500, ErrorMessage = "Açıklama en fazla 500 karakter olabilir.")]
+    string? Aciklama,
+
+    // Boşsa "şimdi" kabul edilir (zamanlayıcı bittiğinde)
+    DateTime? Baslangic);
+
+// ---- İstatistik ----
+public record GunlukDakikaDto(DateOnly Gun, int Dakika);
+public record AlanIstatistikDto(string Alan, int Dakika, int TamamlananKonu, int ToplamKonu);
+
+public record IstatistikDto(
+    int ToplamDakika,
+    int BuHaftaDakika,
+    int TamamlananKonu,
+    int ToplamKonu,
+    int NotSayisi,
+    int GuncelSeri,        // bugün (veya dün) dahil arka arkaya çalışılan gün sayısı
+    int EnUzunSeri,
+    List<GunlukDakikaDto> Son14Gun,
+    List<AlanIstatistikDto> Alanlar);

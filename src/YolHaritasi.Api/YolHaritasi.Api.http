@@ -110,3 +110,56 @@ Content-Type: application/json
 {
   "sql": "DELETE FROM Alanlar"
 }
+
+### ---- Adım 5: Notlar (tam CRUD) ----
+### Konudaki notlarım
+GET {{api}}/api/konular/1/notlar
+Authorization: Bearer {{token}}
+
+### Not ekle (201 Created dönmeli)
+POST {{api}}/api/konular/1/notlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "icerik": "Where filtreler, Select dönüştürür."
+}
+
+### Boş not (400 + Türkçe doğrulama mesajı)
+POST {{api}}/api/konular/1/notlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "icerik": ""
+}
+
+### ---- Çalışma süresi ve istatistik ----
+### 45 dakikalık çalışma kaydet
+POST {{api}}/api/calisma
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "konuId": 1,
+  "dakika": 45,
+  "aciklama": "Ders notunu okudum"
+}
+
+### Geçersiz süre (400)
+POST {{api}}/api/calisma
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "konuId": 1,
+  "dakika": 0
+}
+
+### Son 30 günün çalışmaları
+GET {{api}}/api/calisma?gun=30
+Authorization: Bearer {{token}}
+
+### İstatistiklerim
+GET {{api}}/api/istatistik
+Authorization: Bearer {{token}}

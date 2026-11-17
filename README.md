@@ -14,6 +14,7 @@ Bu repo iki şeydir:
   - [Adım 2: Ders notları, kaynaklar, projeler ve veritabanı ekranı](docs/adim-02.md)
   - [Adım 3: Sözlüğe gerçek kullanım örnekleri](docs/adim-03.md)
   - [Adım 4: Kullanıcı kaydı, giriş (JWT) ve kişisel ilerleme](docs/adim-04.md)
+  - [Adım 5: Notlar, çalışma süresi, istatistikler ve doğrulama](docs/adim-05.md)
 - Kodda ne değiştiğini görmek için GitHub'da **Commits** sekmesine bak. Her commit bir adımdır.
 - Kod dosyalarındaki yorumlar da anlatımın parçası.
 
@@ -38,7 +39,7 @@ Bu repo iki şeydir:
 | ✅ 2 | C# Temelleri, ders notları, kaynaklar, projeler, veritabanı ekranı, SQL pratik alanı | İkinci migration, ADO.NET, ExecuteUpdate, güvenlik katmanları |
 | ✅ 2b | Sözlükte her terime gerçek kullanım örneği (145 terim) | Üçüncü migration, raw string, pattern matching |
 | ✅ 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many, veri taşıma |
-| 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
+| ✅ 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
 | 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
 | 5 | IIS'e yayın | Publish, App Pool, binding, HTTPS, web.config |
 | 6 | Günlük hatırlatma Windows Service'i + Registry'den ayar | Worker Service, sc.exe, Registry, Event Viewer |
@@ -78,7 +79,8 @@ AliskanlikApp/                      ← reponun ana klasörü (git pull burada)
 │   ├── adim-01.md
 │   ├── adim-02.md
 │   ├── adim-03.md
-│   └── adim-04.md
+│   ├── adim-04.md
+│   └── adim-05.md
 └── src/YolHaritasi.Api/            ← uygulama (dotnet run burada)
     ├── Program.cs                  ← başlangıç: servisler + istek boru hattı
     ├── appsettings.Development.json← veritabanı bağlantısı (connection string)

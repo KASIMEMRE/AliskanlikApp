@@ -30,6 +30,32 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
     public DbSet<GorevIlerleme> GorevIlerlemeleri => Set<GorevIlerleme>();
     public DbSet<ProjeAdimIlerleme> ProjeAdimIlerlemeleri => Set<ProjeAdimIlerleme>();
 
+    // ---- Adım 5: notlar ve çalışma süresi ----
+    public DbSet<Not> Notlar => Set<Not>();
+    public DbSet<CalismaOturumu> CalismaOturumlari => Set<CalismaOturumu>();
+
+    /// <summary>
+    /// CONVENTION (kural) ayarı: Modeldeki TÜM DateTime property'lerine bir kerede uygulanır.
+    ///
+    /// Sorun: Tarihleri UTC olarak kaydediyoruz (DateTime.UtcNow). Ama SQL Server'ın datetime2 tipi
+    /// saat dilimi bilgisi tutmaz. EF Core okurken DateTimeKind.Unspecified döner, JSON'da da sonda "Z"
+    /// olmaz ("2026-11-17T12:10:22"). Tarayıcı bunu YEREL saat sanar → Türkiye'de 3 saat kayma!
+    /// Çözüm: VALUE CONVERTER ile "veritabanından okunan her tarih UTC'dir" diyoruz → JSON'da "...Z" olur.
+    /// </summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDonusturucu>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<UtcNullableDonusturucu>();
+    }
+
+    private class UtcDonusturucu() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+        yazarken => yazarken.Kind == DateTimeKind.Local ? yazarken.ToUniversalTime() : yazarken,
+        okurken => DateTime.SpecifyKind(okurken, DateTimeKind.Utc));
+
+    private class UtcNullableDonusturucu() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
+        yazarken => yazarken.HasValue && yazarken.Value.Kind == DateTimeKind.Local ? yazarken.Value.ToUniversalTime() : yazarken,
+        okurken => okurken.HasValue ? DateTime.SpecifyKind(okurken.Value, DateTimeKind.Utc) : okurken);
+
     /// <summary>
     /// FLUENT API: Tabloların detaylı ayarlarını (sütun uzunluğu, index, ilişki) burada yapıyoruz.
     /// Buradaki her ayar MIGRATION'a yansır ve sonunda SQL'e (CREATE TABLE ...) dönüşür.
@@ -131,6 +157,24 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
         {
             e.HasKey(x => new { x.KullaniciId, x.ProjeAdimiId });
             e.HasOne(x => x.ProjeAdimi).WithMany(a => a.Ilerlemeler).HasForeignKey(x => x.ProjeAdimiId);
+        });
+
+        // ---- Adım 5: notlar ve çalışma süresi ----
+        modelBuilder.Entity<Not>(e =>
+        {
+            e.Property(x => x.Icerik).HasMaxLength(4000).IsRequired();
+            // En sık sorgu: "bu kullanıcının bu konudaki notları" → iki sütunlu index
+            e.HasIndex(x => new { x.KullaniciId, x.KonuId });
+        });
+
+        modelBuilder.Entity<CalismaOturumu>(e =>
+        {
+            e.Property(x => x.Aciklama).HasMaxLength(500);
+            // CHECK CONSTRAINT: Veritabanı seviyesinde kural. Uygulama kodu atlansa bile SQL Server 0 veya
+            // negatif dakikayı, ya da 10 saatten uzun oturumu kabul etmez. (Doğrulamanın son savunma hattı)
+            e.ToTable(t => t.HasCheckConstraint("CK_CalismaOturumlari_Dakika", "[Dakika] BETWEEN 1 AND 600"));
+            // İstatistik sorguları kullanıcı + tarihe göre filtreliyor
+            e.HasIndex(x => new { x.KullaniciId, x.Baslangic });
         });
     }
 }

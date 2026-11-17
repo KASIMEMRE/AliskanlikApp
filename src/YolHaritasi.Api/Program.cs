@@ -52,6 +52,7 @@ builder.Services.AddScoped<IIlerlemeServisi, IlerlemeServisi>();
 // Interface'siz kayıt da mümkün: "Biri VeritabaniServisi isterse yenisini ver."
 builder.Services.AddScoped<VeritabaniServisi>();
 builder.Services.AddScoped<HesapServisi>();
+builder.Services.AddScoped<IstatistikServisi>();
 builder.Services.AddSingleton<TokenServisi>();   // durum tutmuyor, herkes aynı nesneyi kullanabilir
 
 // ---------------------------------------------------------------------------

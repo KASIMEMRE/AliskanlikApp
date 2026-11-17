@@ -238,8 +238,45 @@ details.proje-adimlar summary { cursor: pointer; font-weight: 600; color: var(--
 .kod-ust { display: flex; justify-content: space-between; align-items: center; gap: 8px;
   padding: 6px 12px; font-size: .8rem; color: var(--soluk); border-bottom: 1px solid var(--cizgi); }
 .kod-kutu pre { margin: 0; border-radius: 0; }
-.kopyala { background: none; border: 1px solid var(--cizgi); border-radius: 6px; padding: 2px 10px;
+.kopyala, .metin-dugme { background: none; border: 1px solid var(--cizgi); border-radius: 6px; padding: 2px 10px;
   font-size: .75rem; color: var(--soluk); cursor: pointer; }
-.kopyala:hover { color: var(--vurgu); border-color: var(--vurgu); }
+.kopyala:hover, .metin-dugme:hover { color: var(--vurgu); border-color: var(--vurgu); }
 details.terim-ornek-detay { margin-top: 6px; }
 details.terim-ornek-detay summary { cursor: pointer; color: var(--vurgu); font-size: .9rem; font-weight: 600; padding: 4px 0; }
+
+/* ---- Zamanlayıcı ve notlar ---- */
+.arac-kart h3 { margin-top: 0; }
+.zamanlayici { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.zamanlayici .dugme { margin-top: 0; }
+.zamanlayici .sure { font-family: ui-monospace, Consolas, monospace; font-size: 1.6rem; font-weight: 700; min-width: 90px; }
+.zamanlayici input { width: 80px; padding: 8px; border: 1px solid var(--cizgi); border-radius: 8px; background: var(--kart); color: var(--yazi); }
+.dugme.calisiyor { background: #d9534f; }
+[data-not-formu] .dugme { margin: 6px 0 12px; }
+.not { border-top: 1px solid var(--cizgi); padding: 10px 0; }
+.not-icerik { white-space: pre-wrap; }
+.not-alt { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+.not .dugme { margin: 6px 6px 0 0; }
+
+/* ---- İstatistik ---- */
+.stat-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat { margin: 0; }
+.stat-deger { font-size: 1.7rem; font-weight: 700; }
+.stat-ad { color: var(--soluk); }
+
+/* Sütun grafik: tek seri, ince sütunlar, 4px yuvarlak üst köşe, hafif ızgara yok, üzerine gelince değer */
+.sutun-grafik { display: flex; gap: 6px; align-items: flex-end; height: 200px; padding-top: 8px; border-bottom: 1px solid var(--cizgi); }
+.sutun-kolon { flex: 1; height: 100%; display: flex; flex-direction: column; position: relative; outline: none; }
+.sutun-alan { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
+.sutun { width: 70%; max-width: 28px; background: var(--vurgu); border-radius: 4px 4px 0 0; transition: opacity .15s; }
+.sutun-etiket { font-size: .7rem; color: var(--soluk); text-align: center; padding-top: 4px; height: 20px; }
+.sutun-ipucu { display: none; position: absolute; bottom: calc(100% - 20px); left: 50%; transform: translateX(-50%);
+  background: var(--yazi); color: var(--zemin); padding: 6px 10px; border-radius: 6px; font-size: .8rem; white-space: nowrap; z-index: 2; pointer-events: none; }
+.sutun-kolon:hover .sutun-ipucu, .sutun-kolon:focus .sutun-ipucu { display: block; }
+.sutun-grafik:hover .sutun { opacity: .45; }
+.sutun-kolon:hover .sutun { opacity: 1; }
+
+.yatay-satir { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; }
+.yatay-alan { height: 10px; }
+.yatay-cubuk { height: 100%; background: var(--vurgu); border-radius: 0 4px 4px 0; min-width: 0; }
+.yatay-deger { font-size: .85rem; color: var(--soluk); white-space: nowrap; }
+@media (max-width: 600px) { .yatay-satir { grid-template-columns: 1fr; gap: 4px; } }

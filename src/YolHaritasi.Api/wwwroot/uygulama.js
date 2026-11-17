@@ -134,6 +134,7 @@ document.querySelectorAll(".sekme").forEach((dugme) => {
     if (dugme.dataset.sekme === "sozluk") sozlukAra("");
     if (dugme.dataset.sekme === "projeler") projeleriYukle();
     if (dugme.dataset.sekme === "veritabani") veritabaniniYukle();
+    if (dugme.dataset.sekme === "istatistik") istatistikYukle();
   });
 });
 
@@ -164,12 +165,17 @@ function adimiKaydet(konuId, adim) {
 function konuRehberi(kutu, konu, tamamlaninca) {
   let adim = Math.min(kayitliAdim(konu.id), ADIMLAR.length - 1);
 
+  // Rehber kartı her adımda yeniden çizilir; zamanlayıcı ve notlar ise bir kez çizilir (yeniden yüklenmesin)
+  kutu.innerHTML = `<div class="rehber-kutu"></div><div class="konu-araclar"></div>`;
+  const rehberKutu = kutu.querySelector(".rehber-kutu");
+  konuAraclari(kutu.querySelector(".konu-araclar"), konu);
+
   function ciz() {
     adimiKaydet(konu.id, adim);
     const tamam = konu.tamamlanmaTarihi !== null;
     const yapilanGorev = konu.gorevler.filter((g) => g.tamamlandi).length;
 
-    kutu.innerHTML = `
+    rehberKutu.innerHTML = `
       <div class="kart rehber">
         <div class="meta">
           <span class="rozet">${guvenli(konu.alanAdi)} · ${konu.sira}. konu</span>
@@ -197,6 +203,7 @@ function konuRehberi(kutu, konu, tamamlaninca) {
         </div>
       </div>`;
 
+    const kutu = rehberKutu;   // aşağıdaki seçiciler sadece rehber kartının içinde arasın
     kutu.querySelectorAll("[data-git]").forEach((b) =>
       b.addEventListener("click", () => { adim = Number(b.dataset.git); ciz(); ustaKaydir(); }));
     kutu.querySelector("[data-onceki]")?.addEventListener("click", () => { adim--; ciz(); ustaKaydir(); });
@@ -227,10 +234,157 @@ function konuRehberi(kutu, konu, tamamlaninca) {
   }
 
   function ustaKaydir() {
-    kutu.scrollIntoView({ behavior: "smooth", block: "start" });
+    rehberKutu.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   ciz();
+}
+
+// --- ⏱️ Çalışma zamanlayıcısı ve 📝 notlar (her konu kartının altında) ----------
+// Zamanlayıcının başlangıç zamanı localStorage'da tutulur: sayfa yenilense de süre kaybolmaz.
+function zamanlayiciOku() { try { return JSON.parse(localStorage.getItem("zamanlayici")); } catch { return null; } }
+function zamanlayiciYaz(z) { try { z ? localStorage.setItem("zamanlayici", JSON.stringify(z)) : localStorage.removeItem("zamanlayici"); } catch { } }
+let zamanlayiciInterval;
+
+function konuAraclari(kutu, konu) {
+  kutu.innerHTML = `
+    <div class="kart arac-kart">
+      <h3>⏱️ Çalışma süresi</h3>
+      <div class="zamanlayici">
+        <span class="sure" data-sure>00:00</span>
+        <button class="dugme" data-zaman-baslat>▶ Çalışmaya başla</button>
+        <span class="meta">veya</span>
+        <input type="number" min="1" max="600" placeholder="dk" data-elle-dk aria-label="Dakika">
+        <button class="dugme ikincil" data-elle-kaydet>Elle ekle</button>
+      </div>
+      <div class="meta" data-zaman-mesaj></div>
+      <div class="api-etiket">POST /api/calisma</div>
+    </div>
+    <div class="kart arac-kart">
+      <h3>📝 Notlarım</h3>
+      <form data-not-formu>
+        <textarea rows="3" maxlength="4000" placeholder="Bu konuda kendi cümlelerinle bir not yaz… (Kendi cümlenle yazmak öğrenmenin en iyi yolu.)" data-not-yeni></textarea>
+        <button class="dugme kucuk" type="submit">Notu kaydet</button>
+      </form>
+      <div data-not-listesi></div>
+      <div class="api-etiket">GET/POST /api/konular/${konu.id}/notlar · PUT/DELETE /api/notlar/{id}</div>
+    </div>`;
+
+  // ---- Zamanlayıcı ----
+  const sureEl = kutu.querySelector("[data-sure]");
+  const baslatDugme = kutu.querySelector("[data-zaman-baslat]");
+  const mesaj = kutu.querySelector("[data-zaman-mesaj]");
+
+  function guncelle() {
+    const z = zamanlayiciOku();
+    const buKonu = z && z.konuId === konu.id;
+    if (z && !buKonu) {
+      baslatDugme.disabled = true;
+      mesaj.textContent = `Başka bir konuda (${z.baslik}) çalışan bir zamanlayıcı var. Önce onu bitir.`;
+      return;
+    }
+    baslatDugme.disabled = false;
+    baslatDugme.textContent = buKonu ? "■ Bitir ve kaydet" : "▶ Çalışmaya başla";
+    baslatDugme.classList.toggle("calisiyor", !!buKonu);
+    const saniye = buKonu ? Math.floor((Date.now() - z.baslangic) / 1000) : 0;
+    sureEl.textContent = `${String(Math.floor(saniye / 60)).padStart(2, "0")}:${String(saniye % 60).padStart(2, "0")}`;
+  }
+
+  async function kaydet(dakika, baslangic) {
+    try {
+      await api("/api/calisma", { method: "POST", body: JSON.stringify({ konuId: konu.id, dakika, baslangic }) });
+      mesaj.textContent = `✓ ${dakika} dakika kaydedildi. İstatistik sekmesinde görebilirsin.`;
+    } catch (e) {
+      mesaj.textContent = `⚠️ ${e.message}`;
+    }
+  }
+
+  baslatDugme.addEventListener("click", async () => {
+    const z = zamanlayiciOku();
+    if (z && z.konuId === konu.id) {
+      zamanlayiciYaz(null);
+      const dakika = Math.min(600, Math.max(1, Math.round((Date.now() - z.baslangic) / 60000)));
+      await kaydet(dakika, new Date(z.baslangic).toISOString());
+    } else {
+      zamanlayiciYaz({ konuId: konu.id, baslik: konu.baslik, baslangic: Date.now() });
+      mesaj.textContent = "Zamanlayıcı çalışıyor. Sayfayı kapatsan bile süre devam eder.";
+    }
+    guncelle();
+  });
+
+  kutu.querySelector("[data-elle-kaydet]").addEventListener("click", async () => {
+    const girdi = kutu.querySelector("[data-elle-dk]");
+    const dakika = Number(girdi.value);
+    if (!Number.isInteger(dakika) || dakika < 1 || dakika > 600) {
+      mesaj.textContent = "⚠️ 1 ile 600 arasında bir dakika gir.";
+      return;
+    }
+    await kaydet(dakika);
+    girdi.value = "";
+  });
+
+  clearInterval(zamanlayiciInterval);
+  zamanlayiciInterval = setInterval(guncelle, 1000);
+  guncelle();
+
+  // ---- Notlar ----
+  const notListesi = kutu.querySelector("[data-not-listesi]");
+
+  async function notlariYukle() {
+    const notlar = await api(`/api/konular/${konu.id}/notlar`);
+    notListesi.innerHTML = notlar.length === 0
+      ? `<p class="meta">Henüz not yok.</p>`
+      : notlar.map((n) => `
+        <div class="not" data-not="${n.id}">
+          <div class="not-icerik">${guvenli(n.icerik)}</div>
+          <div class="not-alt">
+            <span class="meta">${new Date(n.guncellemeTarihi ?? n.olusturmaTarihi).toLocaleString("tr-TR")}${n.guncellemeTarihi ? " (düzenlendi)" : ""}</span>
+            <span>
+              <button class="metin-dugme" data-not-duzenle>Düzenle</button>
+              <button class="metin-dugme" data-not-sil>Sil</button>
+            </span>
+          </div>
+        </div>`).join("");
+
+    notListesi.querySelectorAll("[data-not-sil]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        if (!confirm("Bu not silinsin mi?")) return;
+        await api(`/api/notlar/${b.closest("[data-not]").dataset.not}`, { method: "DELETE" });
+        await notlariYukle();
+      }));
+
+    notListesi.querySelectorAll("[data-not-duzenle]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const notEl = b.closest("[data-not]");
+        const eski = notEl.querySelector(".not-icerik").textContent;
+        notEl.innerHTML = `
+          <textarea rows="3" maxlength="4000" data-not-metin></textarea>
+          <button class="dugme kucuk" data-not-kaydet>Kaydet</button>
+          <button class="dugme ikincil kucuk" data-not-vazgec>Vazgeç</button>`;
+        notEl.querySelector("[data-not-metin]").value = eski;   // value ile atama: HTML olarak yorumlanmaz
+        notEl.querySelector("[data-not-vazgec]").addEventListener("click", notlariYukle);
+        notEl.querySelector("[data-not-kaydet]").addEventListener("click", async () => {
+          try {
+            await api(`/api/notlar/${notEl.dataset.not}`, {
+              method: "PUT", body: JSON.stringify({ icerik: notEl.querySelector("[data-not-metin]").value }),
+            });
+            await notlariYukle();
+          } catch (e) { alert(e.message); }
+        });
+      }));
+  }
+
+  kutu.querySelector("[data-not-formu]").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const alan = kutu.querySelector("[data-not-yeni]");
+    try {
+      await api(`/api/konular/${konu.id}/notlar`, { method: "POST", body: JSON.stringify({ icerik: alan.value }) });
+      alan.value = "";
+      await notlariYukle();
+    } catch (err) { alert(err.message); }
+  });
+
+  notlariYukle();
 }
 
 function adimIcerigi(anahtar, konu, tamam, yapilanGorev) {
@@ -535,6 +689,57 @@ async function sorguyuCalistir() {
   } catch (e) {
     sonuc.innerHTML = `<div class="hata">⚠️ ${guvenli(e.message)}</div>`;
   }
+}
+
+// --- 📊 İstatistik --------------------------------------------------------------
+function sureYazi(dk) {
+  if (dk < 60) return `${dk} dk`;
+  return `${Math.floor(dk / 60)} sa ${dk % 60 ? `${dk % 60} dk` : ""}`.trim();
+}
+
+async function istatistikYukle() {
+  const d = await api("/api/istatistik");
+  const kutu = document.getElementById("istatistikIcerik");
+  const enCok = Math.max(...d.son14Gun.map((g) => g.dakika), 1);
+  const alanEnCok = Math.max(...d.alanlar.map((a) => a.dakika), 1);
+  const gunAdi = (g) => new Date(g + "T12:00:00").toLocaleDateString("tr-TR", { weekday: "short" });
+  const tarih = (g) => new Date(g + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+
+  kutu.innerHTML = `
+    <div class="stat-izgara">
+      <div class="kart stat"><div class="stat-deger">🔥 ${d.guncelSeri}</div><div class="stat-ad">günlük seri</div><div class="meta">En uzun: ${d.enUzunSeri} gün</div></div>
+      <div class="kart stat"><div class="stat-deger">${sureYazi(d.buHaftaDakika)}</div><div class="stat-ad">son 7 gün</div><div class="meta">Toplam: ${sureYazi(d.toplamDakika)}</div></div>
+      <div class="kart stat"><div class="stat-deger">${d.tamamlananKonu} / ${d.toplamKonu}</div><div class="stat-ad">tamamlanan konu</div><div class="meta">%${Math.floor(d.tamamlananKonu * 100 / d.toplamKonu)}</div></div>
+      <div class="kart stat"><div class="stat-deger">${d.notSayisi}</div><div class="stat-ad">not</div><div class="meta">kendi cümlelerinle</div></div>
+    </div>
+
+    <div class="kart">
+      <h2>Son 14 gün · günlük çalışma süresi</h2>
+      <div class="sutun-grafik" role="img" aria-label="Son 14 günün günlük çalışma dakikaları">
+        ${d.son14Gun.map((g) => `
+          <div class="sutun-kolon" tabindex="0">
+            <div class="sutun-ipucu">${tarih(g.gun)}<br><strong>${sureYazi(g.dakika)}</strong></div>
+            <div class="sutun-alan"><div class="sutun" style="height:${g.dakika === 0 ? 0 : Math.max(3, g.dakika * 100 / enCok)}%"></div></div>
+            <div class="sutun-etiket">${gunAdi(g.gun)}</div>
+          </div>`).join("")}
+      </div>
+      <details class="tablo-detay">
+        <summary>Tablo olarak göster</summary>
+        <table><tr><th>Gün</th><th>Süre</th></tr>
+          ${d.son14Gun.map((g) => `<tr><td>${tarih(g.gun)}</td><td>${sureYazi(g.dakika)}</td></tr>`).join("")}
+        </table>
+      </details>
+    </div>
+
+    <div class="kart">
+      <h2>Alanlara göre</h2>
+      ${d.alanlar.map((a) => `
+        <div class="yatay-satir">
+          <div class="yatay-ad">${guvenli(a.alan)}</div>
+          <div class="yatay-alan"><div class="yatay-cubuk" style="width:${a.dakika * 100 / alanEnCok}%"></div></div>
+          <div class="yatay-deger">${sureYazi(a.dakika)} · ${a.tamamlananKonu}/${a.toplamKonu} konu</div>
+        </div>`).join("")}
+    </div>`;
 }
 
 // --- Hoş geldin kutusu ve geliştirici modu ------------------------------------

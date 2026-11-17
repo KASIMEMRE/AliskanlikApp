@@ -54,6 +54,7 @@
     <button class="sekme aktif" data-sekme="bugun">📅 Bugün</button>
     <button class="sekme" data-sekme="alanlar">🗺️ Tüm Konular</button>
     <button class="sekme" data-sekme="projeler">🧪 Projeler</button>
+    <button class="sekme" data-sekme="istatistik">📊 İstatistik</button>
     <button class="sekme" data-sekme="sozluk">📖 Sözlük</button>
     <button class="sekme" data-sekme="veritabani">🗄️ Veritabanı</button>
   </nav>
@@ -89,6 +90,13 @@
       <p class="sayfa-aciklama">Konularda öğrendiklerini gerçek bir şey yaparak pekiştirdiğin projeler. Bir projeye tıkla, adımlarını sırayla bilgisayarında yap ve bitirdikçe işaretle. <strong>Önerim:</strong> Bir alanın konularının yarısını bitirince o alanın projesine başla.</p>
       <div class="api-etiket">GET /api/projeler</div>
       <div id="projeListesi"></div>
+    </section>
+
+    <!-- İSTATİSTİK -->
+    <section id="istatistik" class="panel">
+      <p class="sayfa-aciklama">Ne kadar çalıştığın ve serin. Süreler konu ekranındaki <strong>⏱️ zamanlayıcıdan</strong> gelir. Bir gün çalışırsan veya konu tamamlarsan serin devam eder.</p>
+      <div class="api-etiket">GET /api/istatistik</div>
+      <div id="istatistikIcerik">Yükleniyor…</div>
     </section>
 
     <!-- SÖZLÜK -->
