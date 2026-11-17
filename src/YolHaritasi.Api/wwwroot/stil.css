@@ -209,3 +209,19 @@ body.gelistirici .api-etiket { display: inline-block; }
 /* Projeler: adımlar açılır kutuda */
 details.proje-adimlar { margin-top: 12px; }
 details.proje-adimlar summary { cursor: pointer; font-weight: 600; color: var(--vurgu); padding: 6px 0; }
+
+/* ---- Terim kullanım örnekleri ---- */
+.terim-izgara { grid-template-columns: 1fr; }
+.terim-kart { cursor: default; }
+.terim-ust { cursor: pointer; }
+.terim-tanim { margin-bottom: 8px; }
+.kullanim { background: var(--kod-zemin); border-radius: 8px; padding: 10px 12px; margin: 8px 0; font-size: .95rem; }
+.kod-kutu { border: 1px solid var(--cizgi); border-radius: 8px; margin: 8px 0; overflow: hidden; }
+.kod-ust { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 6px 12px; font-size: .8rem; color: var(--soluk); border-bottom: 1px solid var(--cizgi); }
+.kod-kutu pre { margin: 0; border-radius: 0; }
+.kopyala { background: none; border: 1px solid var(--cizgi); border-radius: 6px; padding: 2px 10px;
+  font-size: .75rem; color: var(--soluk); cursor: pointer; }
+.kopyala:hover { color: var(--vurgu); border-color: var(--vurgu); }
+details.terim-ornek-detay { margin-top: 6px; }
+details.terim-ornek-detay summary { cursor: pointer; color: var(--vurgu); font-size: .9rem; font-weight: 600; padding: 4px 0; }

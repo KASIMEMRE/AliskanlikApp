@@ -239,8 +239,19 @@ namespace YolHaritasi.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("KodDili")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("KodOrnegi")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("KonuId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Kullanim")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Ornek")
                         .HasMaxLength(1000)

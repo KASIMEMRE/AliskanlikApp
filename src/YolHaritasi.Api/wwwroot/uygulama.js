@@ -67,6 +67,38 @@ function markdown(metin) {
   return html;
 }
 
+// --- Terimin gerçek kullanım örneği (Sözlük ve konu rehberinde ortak) ---------
+const KOD_DILLERI = { csharp: "C#", sql: "SQL", powershell: "PowerShell", http: "HTTP isteği", json: "JSON", text: "Örnek" };
+
+function terimOrnekHtml(t) {
+  if (!t.kullanim && !t.kodOrnegi) return "";
+  return `
+    ${t.kullanim ? `<div class="kullanim"><strong>🧭 Nerede kullanılır?</strong> ${guvenli(t.kullanim)}</div>` : ""}
+    ${t.kodOrnegi ? `
+      <div class="kod-kutu">
+        <div class="kod-ust">
+          <span>💻 Örnek kullanım · ${guvenli(KOD_DILLERI[t.kodDili] ?? t.kodDili ?? "")}</span>
+          <button class="kopyala" type="button">Kopyala</button>
+        </div>
+        <pre><code>${guvenli(t.kodOrnegi)}</code></pre>
+      </div>` : ""}`;
+}
+
+// "Kopyala" düğmeleri: Sayfadaki tüm kopyala düğmelerini tek bir dinleyiciyle yönetiyoruz (event delegation).
+document.addEventListener("click", async (e) => {
+  const dugme = e.target.closest(".kopyala");
+  if (!dugme) return;
+  e.stopPropagation();
+  const kod = dugme.closest(".kod-kutu").querySelector("code").textContent;
+  try {
+    await navigator.clipboard.writeText(kod);
+    dugme.textContent = "Kopyalandı ✓";
+  } catch {
+    dugme.textContent = "Kopyalanamadı";
+  }
+  setTimeout(() => (dugme.textContent = "Kopyala"), 1500);
+});
+
 // --- Sekmeler ----------------------------------------------------------------
 document.querySelectorAll(".sekme").forEach((dugme) => {
   dugme.addEventListener("click", () => {
@@ -148,8 +180,9 @@ function konuRehberi(kutu, konu, tamamlaninca) {
     kutu.querySelector("[data-sonraki]")?.addEventListener("click", () => { adim++; ciz(); ustaKaydir(); });
 
     // Terim kartları: tıklayınca tanım açılır
-    kutu.querySelectorAll(".terim-kart").forEach((k) =>
-      k.addEventListener("click", () => k.classList.toggle("acik")));
+    // Sadece başlığa tıklayınca aç/kapa; böylece kodu seçip kopyalarken kart kapanmaz
+    kutu.querySelectorAll(".terim-ust").forEach((ust) =>
+      ust.addEventListener("click", () => ust.closest(".terim-kart").classList.toggle("acik")));
 
     // Görev kutuları: PATCH /api/gorevler/{id}
     kutu.querySelectorAll("[data-gorev]").forEach((kutucuk) =>
@@ -196,15 +229,17 @@ function adimIcerigi(anahtar, konu, tamam, yapilanGorev) {
         : `<p class="yapilacak">👉 Bu konu için ek kaynak yok. <strong>İleri</strong>'ye geç.</p>`;
 
     case "terim":
-      return `<p class="yapilacak">👉 <strong>Şimdi:</strong> Her terimin adını oku ve anlamını <strong>önce kendin hatırlamaya çalış</strong>. Sonra karta tıklayıp tanıma bak.</p>
+      return `<p class="yapilacak">👉 <strong>Şimdi:</strong> Her terimin adını oku ve anlamını <strong>önce kendin hatırlamaya çalış</strong>. Sonra terime tıkla: tanımı, gerçek projelerde nerede kullanıldığını ve örnek kodu gör.</p>
         <div class="terim-izgara">
           ${konu.terimler.map((t) => `
             <div class="terim-kart">
-              <div class="terim-ad">${guvenli(t.ad)}</div>
-              <div class="terim-ipucu">Tanımı görmek için tıkla</div>
+              <div class="terim-ust">
+                <div class="terim-ad">${guvenli(t.ad)}</div>
+                <div class="terim-ipucu">Tanımı ve örneği görmek için tıkla ▾</div>
+              </div>
               <div class="terim-arka">
-                <div>${guvenli(t.tanim)}</div>
-                ${t.ornek ? `<div class="terim-ornek">${guvenli(t.ornek)}</div>` : ""}
+                <div class="terim-tanim">${guvenli(t.tanim)}</div>
+                ${terimOrnekHtml(t)}
               </div>
             </div>`).join("")}
         </div>`;
@@ -332,14 +367,20 @@ async function sozlukAra(kelime) {
   // encodeURIComponent: Boşluk, Türkçe karakter gibi şeyleri URL'ye uygun hale getirir.
   const terimler = await api(`/api/terimler?ara=${encodeURIComponent(kelime)}`);
   const sonuc = document.getElementById("sozlukSonuc");
+  // Az sonuç varsa örnekler açık gelsin; çok sonuç varsa (ör. tüm liste) kapalı, tıklayınca açılsın.
+  const acik = terimler.length <= 5;
   sonuc.innerHTML = `<p class="meta">${terimler.length} terim bulundu</p>` + (terimler.length === 0 ? "" : `
     <div class="kart">
       ${terimler.map((t) => `
         <div class="terim">
           <div class="terim-ad">${guvenli(t.ad)}</div>
-          <div>${guvenli(t.tanim)}</div>
-          ${t.ornek ? `<div class="terim-ornek">${guvenli(t.ornek)}</div>` : ""}
+          <div class="terim-tanim">${guvenli(t.tanim)}</div>
           <div class="terim-kaynak">${guvenli(t.alanAdi)} → ${guvenli(t.konuBaslik)}</div>
+          ${t.kodOrnegi || t.kullanim ? `
+            <details class="terim-ornek-detay" ${acik ? "open" : ""}>
+              <summary>💻 Gerçek kullanım örneği</summary>
+              ${terimOrnekHtml(t)}
+            </details>` : ""}
         </div>`).join("")}
     </div>`);
 }

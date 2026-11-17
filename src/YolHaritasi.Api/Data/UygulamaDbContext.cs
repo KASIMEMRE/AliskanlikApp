@@ -62,6 +62,9 @@ public class UygulamaDbContext(DbContextOptions<UygulamaDbContext> options) : Db
             e.Property(x => x.Ad).HasMaxLength(100).IsRequired();
             e.Property(x => x.Tanim).HasMaxLength(1000).IsRequired();
             e.Property(x => x.Ornek).HasMaxLength(1000);
+            e.Property(x => x.Kullanim).HasMaxLength(1000);
+            e.Property(x => x.KodDili).HasMaxLength(20);
+            // KodOrnegi için sınır yok → nvarchar(max)
 
             // Sözlükte terim adına göre arama yapacağız; index aramayı hızlandırır.
             e.HasIndex(x => x.Ad);

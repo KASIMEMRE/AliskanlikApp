@@ -34,7 +34,7 @@ public record AlanDetayDto(
     string Aciklama,
     List<KonuOzetDto> Konular);
 
-public record TerimDto(int Id, string Ad, string Tanim, string? Ornek);
+public record TerimDto(int Id, string Ad, string Tanim, string? Ornek, string? Kullanim, string? KodOrnegi, string? KodDili);
 
 public record GorevDto(int Id, int Sira, string Aciklama, bool Tamamlandi);
 
@@ -54,7 +54,8 @@ public record KonuDetayDto(
     List<KaynakDto> Kaynaklar);
 
 /// <summary>Sözlük araması sonucu: terim + hangi konuya ait olduğu.</summary>
-public record TerimAramaDto(int Id, string Ad, string Tanim, string? Ornek, int KonuId, string KonuBaslik, string AlanAdi);
+public record TerimAramaDto(int Id, string Ad, string Tanim, string? Ornek, string? Kullanim, string? KodOrnegi, string? KodDili,
+    int KonuId, string KonuBaslik, string AlanAdi);
 
 /// <summary>Hata durumunda dönen Türkçe mesaj. Örn: { "mesaj": "5 numaralı konu bulunamadı." }</summary>
 public record HataDto(string Mesaj);

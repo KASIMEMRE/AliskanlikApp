@@ -49,6 +49,30 @@ public static partial class BaslangicVerisi
                 konu.Kaynaklar.AddRange(KaynaklariOlustur(konu.Alan.Ad, konu.Sira));   // → INSERT
         }
 
+        // ---- 3b) Terimlerin gerçek kullanım örnekleri (Adım 3) ----
+        // Örneği henüz olmayan terimlere, adına göre örnek yaz.
+        // Aynı adlı terim farklı alanlarda farklı anlama gelebilir ("Index": C#'ta liste sırası, SQL'de veritabanı
+        // dizini). Bu yüzden önce terimin kendi alanının sözlüğüne bakıyoruz:
+        //   C# Temelleri / Backend → TerimOrnekleri1,   SQL / Sunucu / Yapay Zeka → TerimOrnekleri2
+        var ornekBekleyenler = await db.Terimler
+            .Include(t => t.Konu).ThenInclude(k => k.Alan)
+            .Where(t => t.KodOrnegi == null)
+            .ToListAsync();
+
+        foreach (var terim in ornekBekleyenler)
+        {
+            var (once, sonra) = terim.Konu.Alan.Ad is "C# Temelleri" or "Backend"
+                ? (TerimOrnekleri1, TerimOrnekleri2)
+                : (TerimOrnekleri2, TerimOrnekleri1);
+
+            if (once.TryGetValue(terim.Ad, out var o) || sonra.TryGetValue(terim.Ad, out o))
+            {
+                terim.Kullanim = o.Kullanim;
+                terim.KodDili = o.Dil;
+                terim.KodOrnegi = o.Kod;
+            }
+        }
+
         // ---- 4) Projeler ----
         var alanlar = await db.Alanlar.Include(a => a.Projeler).ToListAsync();
         foreach (var alan in alanlar.Where(a => a.Projeler.Count == 0))

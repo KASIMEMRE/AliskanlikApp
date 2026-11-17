@@ -32,7 +32,7 @@ public class TerimlerController(UygulamaDbContext db) : ControllerBase
 
         return await sorgu
             .OrderBy(t => t.Ad)
-            .Select(t => new TerimAramaDto(t.Id, t.Ad, t.Tanim, t.Ornek, t.KonuId, t.Konu.Baslik, t.Konu.Alan.Ad))
+            .Select(t => new TerimAramaDto(t.Id, t.Ad, t.Tanim, t.Ornek, t.Kullanim, t.KodOrnegi, t.KodDili, t.KonuId, t.Konu.Baslik, t.Konu.Alan.Ad))
             .ToListAsync();
     }
 }
