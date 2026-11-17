@@ -9,7 +9,9 @@ GET {{api}}/api/bugun
 ### Tüm alanlar ve ilerleme yüzdeleri
 GET {{api}}/api/alanlar
 
-### SQL alanının konuları
+### 2 numaralı alanın konuları
+# Not: Id'ler veritabanına göre değişebilir (sıfırdan kurulumda 1 = C# Temelleri).
+# Hangi Id'nin hangi alan olduğunu yukarıdaki isteğin cevabında görebilirsin.
 GET {{api}}/api/alanlar/2
 
 ### Bir konunun detayı (terimler + görevler)
@@ -31,3 +33,33 @@ Content-Type: application/json
 
 ### Sözlükte ara
 GET {{api}}/api/terimler?ara=key
+
+### Projeler ve adımları
+GET {{api}}/api/projeler
+
+### Bir proje adımını işaretle
+PATCH {{api}}/api/projeler/adimlar/1
+Content-Type: application/json
+
+{
+  "tamamlandi": true
+}
+
+### Veritabanı bağlantısı ve tablolar
+GET {{api}}/api/veritabani/durum
+
+### SQL sorgusu çalıştır (sadece SELECT)
+POST {{api}}/api/veritabani/sorgu
+Content-Type: application/json
+
+{
+  "sql": "SELECT TOP 5 Baslik, TahminiDakika FROM Konular ORDER BY TahminiDakika DESC"
+}
+
+### Engellenen sorgu (400 dönmeli)
+POST {{api}}/api/veritabani/sorgu
+Content-Type: application/json
+
+{
+  "sql": "DELETE FROM Alanlar"
+}

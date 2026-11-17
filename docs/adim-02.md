@@ -142,8 +142,9 @@ Kod: `wwwroot/uygulama.js` içindeki `konuRehberi()` ve `adimIcerigi()` fonksiyo
 
 ## 8. 🖥️ Bilgisayarında
 
-Proje klasöründe:
+Çalışan bir uygulama varsa önce terminalde `Ctrl+C` ile durdur. Sonra:
 ```powershell
+cd ~\Projeler\AliskanlikApp
 git pull
 cd src\YolHaritasi.Api
 dotnet run
@@ -156,8 +157,8 @@ Applying migration '2026..._DersNotlariKaynaklarProjeler'.
 ```
 Sonra SSMS'te `Kaynaklar`, `Projeler` ve `ProjeAdimlari` tablolarına bak.
 
-> ⚠️ **W3Schools linkleri hakkında:** Linkler W3Schools'un bilinen ders adreslerinden oluşturuldu. Ancak geliştirme ortamım
-> W3Schools'a erişemediği için tek tek açılıp kontrol edilemedi. Açılmayan bir link görürsen bana yaz, düzelteyim.
+> ⚠️ **Kaynak linkleri hakkında:** W3Schools, Microsoft Learn, MDN ve jwt.io linkleri bu sitelerin bilinen adres yapısından oluşturuldu.
+> Geliştirme ortamım bu sitelere erişemediği için linkler tek tek açılıp kontrol edilemedi. Açılmayan bir link görürsen bana yaz, düzelteyim.
 > W3Schools'un ders metinleri telif hakkıyla korunduğu için uygulamaya kopyalanmadı. Uygulamadaki ders notları
 > bu proje için ayrıca yazıldı, detay için linkler verildi.
 

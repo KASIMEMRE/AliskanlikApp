@@ -45,10 +45,46 @@ Bu repo iki şeydir:
 | 10 | Docker, CI/CD, cache | Container, GitHub Actions, Redis |
 
 ## ▶️ Çalıştırma (Windows)
-Kurulum ve detaylar: [docs/adim-01.md](docs/adim-01.md#️-bilgisayarında-çalıştır)
-```bash
-cd src/YolHaritasi.Api
+İlk kurulum (Visual Studio, LocalDB, SSMS): [Adım 1 → Bilgisayarında çalıştır](docs/adim-01.md#calistir)
+
+Her seferinde PowerShell'de **bu üç satırı sırayla** çalıştır. İlk satır seni nerede olursan ol reponun ana klasörüne götürür,
+böylece "Cannot find path" hatası almazsın:
+```powershell
+cd ~\Projeler\AliskanlikApp
+git pull
+cd src\YolHaritasi.Api
 dotnet run
 ```
-Tarayıcıda **http://localhost:5019** → Türkçe uygulama ekranı açılır (Bugün · Alanlar · Sözlük).
+Tarayıcıda **http://localhost:5019** → Türkçe uygulama ekranı açılır. Durdurmak için terminalde `Ctrl+C`.
 API'yi doğrudan denemek için: **http://localhost:5019/scalar**
+
+### Hangi komut hangi klasörde çalışır?
+| Komut | Klasör |
+|---|---|
+| `git pull`, `git status` | Reponun herhangi bir yeri (genelde `~\Projeler\AliskanlikApp`) |
+| `dotnet run`, `dotnet build` | `~\Projeler\AliskanlikApp\src\YolHaritasi.Api` (`.csproj` dosyasının olduğu yer) |
+| `dotnet tool restore` | `~\Projeler\AliskanlikApp` (`dotnet-tools.json` burada) |
+| `dotnet ef ...` | `~\Projeler\AliskanlikApp\src\YolHaritasi.Api` |
+
+## 📁 Klasör yapısı
+```
+AliskanlikApp/                      ← reponun ana klasörü (git pull burada)
+├── README.md                       ← bu dosya
+├── dotnet-tools.json               ← proje araçları (dotnet-ef)
+├── docs/                           ← 📚 her geliştirme adımının anlatımı
+│   ├── adim-01.md
+│   └── adim-02.md
+└── src/YolHaritasi.Api/            ← uygulama (dotnet run burada)
+    ├── Program.cs                  ← başlangıç: servisler + istek boru hattı
+    ├── appsettings.Development.json← veritabanı bağlantısı (connection string)
+    ├── Entities/                   ← tablo sınıfları (Alan, Konu, Terim, Gorev, Kaynak, Proje)
+    ├── Data/
+    │   ├── UygulamaDbContext.cs    ← C# ↔ SQL Server köprüsü
+    │   ├── BaslangicVerisi*.cs     ← yol haritası içeriği (konular, ders notları, kaynaklar, projeler)
+    │   └── Migrations/             ← veritabanı şema geçişleri
+    ├── Dtos/                       ← API'nin dışarı verdiği veri şekilleri
+    ├── Services/                   ← iş kuralları (IlerlemeServisi, VeritabaniServisi)
+    ├── Controllers/                ← API adresleri (/api/...)
+    ├── wwwroot/                    ← tarayıcıda açılan ekran (HTML, CSS, JavaScript)
+    └── YolHaritasi.Api.http        ← API'yi Visual Studio'dan denemek için hazır istekler
+```

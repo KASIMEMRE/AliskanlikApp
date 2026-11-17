@@ -212,6 +212,7 @@ her istekte EF Core'un SQL Server'a gönderdiği **gerçek SQL'i** göreceksin (
 
 ---
 
+<a id="calistir"></a>
 ## 6. 🖥️ Bilgisayarında çalıştır
 
 ### Bir kerelik kurulum
@@ -274,9 +275,18 @@ Ya da Visual Studio'da `YolHaritasi.Api.http` dosyasını açıp isteklerin yan�
 |---|---|
 | `Failed to determine the https port for redirect` uyarısı | `http` profilinde çalışıyorsun ve https adresi yok. Zararsız. `dotnet run --launch-profile https` ile kaybolur |
 | `A network-related or instance-specific error ... (localdb)` | LocalDB kurulu değil veya çalışmıyor. `sqllocaldb start MSSQLLocalDB` dene; olmazsa VS Installer'dan iş yükünü kontrol et |
-| Ekranda eski içerik görünüyor (güncellemeden sonra) | Başlangıç verisi sadece veritabanı **boşken** eklenir. Veritabanını silip yeniden oluştur (aşağıdaki satır) |
-| İlerlemeyi sıfırlamak istiyorum | SSMS'te: `UPDATE Konular SET TamamlanmaTarihi = NULL; UPDATE Gorevler SET Tamamlandi = 0;` |
-| Veritabanını tamamen silip baştan kurmak | `dotnet ef database drop` (proje klasöründe; önce bir kez `dotnet tool restore`) → sonra `dotnet run` |
+| `Cannot find path ...` (cd komutunda) | Yanlış klasördesin. Önce `cd ~\Projeler\AliskanlikApp` ile reponun ana klasörüne dön, sonra devam et |
+| Ekranda eski içerik görünüyor (güncellemeden sonra) | `git pull` yaptıktan sonra uygulamayı `Ctrl+C` ile durdurup tekrar `dotnet run` ile başlat. (Adım 2'den itibaren yeni içerik veritabanını silmeden eklenir) |
+| İlerlemeyi sıfırlamak istiyorum | SSMS'te: `UPDATE Konular SET TamamlanmaTarihi = NULL; UPDATE Gorevler SET Tamamlandi = 0; UPDATE ProjeAdimlari SET Tamamlandi = 0;` |
+| Veritabanını tamamen silip baştan kurmak | Aşağıdaki komutlar, sonra `dotnet run` |
+
+```powershell
+cd ~\Projeler\AliskanlikApp
+dotnet tool restore
+cd src\YolHaritasi.Api
+dotnet ef database drop -f
+dotnet run
+```
 
 ---
 

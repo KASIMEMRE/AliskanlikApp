@@ -154,11 +154,17 @@ public static partial class BaslangicVerisi
         [("Sunucu ve Windows", 1)] = [
             ("ASP.NET Core'u IIS ile barındırma (Microsoft Learn)", $"{MsLearn}/aspnet/core/host-and-deploy/iis/"),
         ],
+        [("Sunucu ve Windows", 2)] = [
+            ("Uygulama havuzu kimlikleri (Microsoft Learn)", $"{MsLearn}/iis/manage/configuring-security/application-pool-identities"),
+        ],
         [("Sunucu ve Windows", 3)] = [
             ("What is HTTPS?", $"{W3}/whatis/whatis_https.asp"),
         ],
         [("Sunucu ve Windows", 4)] = [
             ("Windows hizmeti olarak .NET uygulaması (Microsoft Learn)", $"{MsLearn}/dotnet/core/extensions/windows-service"),
+        ],
+        [("Sunucu ve Windows", 5)] = [
+            ("İleri düzey kullanıcılar için Windows Kayıt Defteri (Microsoft Learn)", $"{MsLearn}/troubleshoot/windows-server/performance/windows-registry-advanced-users"),
         ],
         [("Sunucu ve Windows", 6)] = [
             ("PowerShell'e genel bakış (Microsoft Learn)", $"{MsLearn}/powershell/scripting/overview"),
@@ -171,6 +177,19 @@ public static partial class BaslangicVerisi
         ],
         [("Yapay Zeka", 2)] = [
             ("Microsoft.Extensions.AI kütüphaneleri (Microsoft Learn)", $"{MsLearn}/dotnet/ai/microsoft-extensions-ai"),
+        ],
+        [("Yapay Zeka", 3)] = [
+            (".NET için prompt mühendisliği (Microsoft Learn)", $"{MsLearn}/dotnet/ai/conceptual/prompt-engineering-dotnet"),
+        ],
+        [("Yapay Zeka", 4)] = [
+            ("Function calling hızlı başlangıç (Microsoft Learn)", $"{MsLearn}/dotnet/ai/quickstarts/use-function-calling"),
+        ],
+        [("Yapay Zeka", 5)] = [
+            ("Embedding kavramı (Microsoft Learn)", $"{MsLearn}/dotnet/ai/conceptual/embeddings"),
+            ("RAG kavramı (Microsoft Learn)", $"{MsLearn}/dotnet/ai/conceptual/rag"),
+        ],
+        [("Yapay Zeka", 6)] = [
+            ("OWASP Top 10: LLM uygulama riskleri", "https://genai.owasp.org/llm-top-10/"),
         ],
     };
 
