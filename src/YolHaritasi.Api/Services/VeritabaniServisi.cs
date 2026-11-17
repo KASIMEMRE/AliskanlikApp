@@ -205,5 +205,5 @@ public partial class VeritabaniServisi(UygulamaDbContext db, ILogger<VeritabaniS
     }
 }
 
-/// <summary>Kullanıcının sorgusundaki hatalar için özel exception tipi (→ 400 Bad Request).</summary>
-public class SorguHatasi(string mesaj) : Exception(mesaj);
+/// <summary>Kullanıcının sorgusundaki hatalar için özel exception tipi (→ 400 Bad Request, GlobalHataYakalayici).</summary>
+public class SorguHatasi(string mesaj) : YolHaritasi.Api.Hatalar.UygulamaHatasi(mesaj, StatusCodes.Status400BadRequest);

@@ -17,32 +17,16 @@ public class HesapController(HesapServisi hesap) : ControllerBase
     [AllowAnonymous]   // Giriş yapmamış kişi de çağırabilmeli (yoksa kimse kayıt olamaz!)
     [HttpPost("kayit")]
     public async Task<ActionResult<OturumDto>> Kayit(KayitIstegi istek)
-    {
-        try
-        {
-            return await hesap.KayitAsync(istek);
-        }
-        catch (HesapHatasi ex)
-        {
-            return Conflict(new HataDto(ex.Message));   // 409 Conflict: e-posta zaten kayıtlı
-        }
-    }
+        // Adım 6: try/catch yok. E-posta kayıtlıysa servis HesapHatasi(409) fırlatır;
+        // GlobalHataYakalayici bunu 409 Conflict + ProblemDetails cevabına çevirir.
+        => await hesap.KayitAsync(istek);
 
     /// <summary>E-posta ve şifreyle giriş yapar, token döner.</summary>
     // POST /api/hesap/giris   gövde: { "email": "...", "sifre": "..." }
     [AllowAnonymous]
     [HttpPost("giris")]
     public async Task<ActionResult<OturumDto>> Giris(GirisIstegi istek)
-    {
-        try
-        {
-            return await hesap.GirisAsync(istek);
-        }
-        catch (HesapHatasi ex)
-        {
-            return Unauthorized(new HataDto(ex.Message));   // 401
-        }
-    }
+        => await hesap.GirisAsync(istek);   // hatalı şifre → HesapHatasi(401) → GlobalHataYakalayici
 
     /// <summary>Token'ın sahibi olan kullanıcıyı döner. Token geçersizse 401.</summary>
     // GET /api/hesap/ben    başlık: Authorization: Bearer eyJ...

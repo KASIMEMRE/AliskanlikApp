@@ -15,6 +15,7 @@ Bu repo iki şeydir:
   - [Adım 3: Sözlüğe gerçek kullanım örnekleri](docs/adim-03.md)
   - [Adım 4: Kullanıcı kaydı, giriş (JWT) ve kişisel ilerleme](docs/adim-04.md)
   - [Adım 5: Notlar, çalışma süresi, istatistikler ve doğrulama](docs/adim-05.md)
+  - [Adım 6: Global hata yönetimi, Serilog ve health check](docs/adim-06.md)
 - Kodda ne değiştiğini görmek için GitHub'da **Commits** sekmesine bak. Her commit bir adımdır.
 - Kod dosyalarındaki yorumlar da anlatımın parçası.
 
@@ -40,7 +41,7 @@ Bu repo iki şeydir:
 | ✅ 2b | Sözlükte her terime gerçek kullanım örneği (145 terim) | Üçüncü migration, raw string, pattern matching |
 | ✅ 3 | Kullanıcı kaydı/girişi, herkesin kendi ilerlemesi | Authentication, JWT, hash, many-to-many, veri taşıma |
 | ✅ 3+ | Not alma, çalışma süresi kaydı, istatistikler, doğrulama | CRUD, validation, GROUP BY |
-| 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
+| ✅ 4 | Global hata yönetimi, yapılandırılmış loglama, health check | Middleware, Serilog, ProblemDetails |
 | 5 | IIS'e yayın | Publish, App Pool, binding, HTTPS, web.config |
 | 6 | Günlük hatırlatma Windows Service'i + Registry'den ayar | Worker Service, sc.exe, Registry, Event Viewer |
 | 7 | 🤖 AI Mentor: terimi basitçe anlat, quiz üret | LLM, prompt, Microsoft.Extensions.AI |
@@ -80,7 +81,8 @@ AliskanlikApp/                      ← reponun ana klasörü (git pull burada)
 │   ├── adim-02.md
 │   ├── adim-03.md
 │   ├── adim-04.md
-│   └── adim-05.md
+│   ├── adim-05.md
+│   └── adim-06.md
 └── src/YolHaritasi.Api/            ← uygulama (dotnet run burada)
     ├── Program.cs                  ← başlangıç: servisler + istek boru hattı
     ├── appsettings.Development.json← veritabanı bağlantısı (connection string)
@@ -91,6 +93,8 @@ AliskanlikApp/                      ← reponun ana klasörü (git pull burada)
     │   ├── BaslangicVerisi*.cs     ← yol haritası içeriği (konular, ders notları, kaynaklar, projeler)
     │   └── Migrations/             ← veritabanı şema geçişleri
     ├── Dtos/                       ← API'nin dışarı verdiği veri şekilleri
+    ├── Hatalar/                    ← global hata yakalayıcı (ProblemDetails)
+    ├── logs/                       ← Serilog log dosyaları (Git'e girmez)
     ├── Services/                   ← iş kuralları (IlerlemeServisi, HesapServisi, VeritabaniServisi)
     ├── Controllers/                ← API adresleri (/api/...)
     ├── wwwroot/                    ← tarayıcıda açılan ekran (HTML, CSS, JavaScript)

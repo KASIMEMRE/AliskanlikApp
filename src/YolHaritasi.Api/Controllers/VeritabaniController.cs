@@ -31,13 +31,7 @@ public class VeritabaniController(VeritabaniServisi servis, IWebHostEnvironment 
             return StatusCode(StatusCodes.Status403Forbidden,
                 new HataDto("SQL pratik alanı sadece geliştirme ortamında kullanılabilir."));
 
-        try
-        {
-            return await servis.SorguCalistirAsync(istek.Sql);
-        }
-        catch (SorguHatasi ex)
-        {
-            return BadRequest(new HataDto(ex.Message));   // 400
-        }
+        // Hatalı sorguda servis SorguHatasi(400) fırlatır; GlobalHataYakalayici cevaba çevirir (Adım 6).
+        return await servis.SorguCalistirAsync(istek.Sql);
     }
 }

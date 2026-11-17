@@ -163,3 +163,16 @@ Authorization: Bearer {{token}}
 ### İstatistiklerim
 GET {{api}}/api/istatistik
 Authorization: Bearer {{token}}
+
+### ---- Adım 6: Hata yönetimi, loglama, sağlık ----
+### Sağlık (readiness): veritabanı dahil → 200 Healthy / 503 Unhealthy
+GET {{api}}/saglik
+
+### Canlılık (liveness): süreç ayakta mı?
+GET {{api}}/saglik/canli
+
+### Bilerek beklenmeyen hata (500 + traceId). Sonra logs/ klasöründe traceId'yi ara.
+GET {{api}}/api/gelistirici/hata
+
+### Tüm log seviyelerinde birer satır yaz
+GET {{api}}/api/gelistirici/log

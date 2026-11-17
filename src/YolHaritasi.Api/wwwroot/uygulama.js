@@ -615,7 +615,17 @@ async function veritabaniniYukle() {
   const kutu = document.getElementById("dbDurum");
   const renk = d.bagli ? "var(--basari)" : "#d9534f";
 
+  // Sağlık kontrolü (Adım 6): 200 = Healthy, 503 = Unhealthy. İki durumda da gövde JSON.
+  const saglik = await fetch("/saglik").then((r) => r.json()).catch(() => null);
+  const saglikRenk = saglik?.durum === "Healthy" ? "var(--basari)" : "#d9534f";
+
   kutu.innerHTML = `
+    ${saglik ? `
+    <div class="kart">
+      <h2><span class="durum-nokta" style="background:${saglikRenk}"></span>Sistem sağlığı: ${guvenli(saglik.durum)}</h2>
+      <p class="meta">GET /saglik · ${saglik.sureMs} ms · ${saglik.kontroller.map((k) => `${guvenli(k.ad)}: ${guvenli(k.durum)} (${k.sureMs} ms)`).join(", ")}</p>
+      <p class="meta">IIS, yük dengeleyiciler ve izleme araçları bu adresi düzenli çağırarak uygulamanın ve veritabanının çalışıp çalışmadığını anlar.</p>
+    </div>` : ""}
     <div class="kart">
       <h2><span class="durum-nokta" style="background:${renk}"></span>${d.bagli ? "Bağlantı kuruldu" : "Bağlantı yok"}</h2>
       <dl class="bilgi-izgara">

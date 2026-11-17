@@ -4,6 +4,7 @@ using YolHaritasi.Api.Auth;
 using YolHaritasi.Api.Data;
 using YolHaritasi.Api.Dtos;
 using YolHaritasi.Api.Entities;
+using YolHaritasi.Api.Hatalar;
 
 namespace YolHaritasi.Api.Services;
 
@@ -24,7 +25,7 @@ public class HesapServisi(
         var email = istek.Email.Trim().ToLowerInvariant();
 
         if (await db.Kullanicilar.AnyAsync(k => k.Email == email))
-            throw new HesapHatasi("Bu e-posta adresiyle zaten bir hesap var.");
+            throw new HesapHatasi("Bu e-posta adresiyle zaten bir hesap var.", StatusCodes.Status409Conflict);
 
         // İlk kayıt olan kişi Admin olur (uygulamanın sahibi). Sonrakiler normal kullanıcı.
         var ilkKullaniciMi = !await db.Kullanicilar.AnyAsync();
@@ -58,7 +59,7 @@ public class HesapServisi(
             _hasher.VerifyHashedPassword(kullanici, kullanici.SifreHash, istek.Sifre) == PasswordVerificationResult.Failed)
         {
             logger.LogWarning("Başarısız giriş denemesi. Email={Email}", email);
-            throw new HesapHatasi("E-posta veya şifre hatalı.");
+            throw new HesapHatasi("E-posta veya şifre hatalı.", StatusCodes.Status401Unauthorized);
         }
 
         return OturumOlustur(kullanici);
@@ -112,5 +113,9 @@ public class HesapServisi(
     }
 }
 
-/// <summary>Kayıt/giriş sırasında kullanıcıya gösterilecek hatalar (→ 400 / 401).</summary>
-public class HesapHatasi(string mesaj) : Exception(mesaj);
+/// <summary>
+/// Kayıt/giriş sırasında kullanıcıya gösterilecek hatalar.
+/// UygulamaHatasi'ndan türediği için GlobalHataYakalayici bunu otomatik olarak doğru HTTP cevabına çevirir;
+/// controller'da try/catch gerekmez (Adım 6).
+/// </summary>
+public class HesapHatasi(string mesaj, int durumKodu) : UygulamaHatasi(mesaj, durumKodu);
